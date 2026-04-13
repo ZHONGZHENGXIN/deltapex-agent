@@ -1,0 +1,94 @@
+---
+title: "用户 API"
+description: "管理用户个人资料、会员状态和使用统计相关的接口"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 用户 API
+
+用户 API 负责处理所有与特定用户相关的数据，包括个人资料、会员升级和使用情况统计。所有端点都需要有效的身份验证。
+
+## API 端点详情
+
+### 升级会员计划
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /user/upgrade
+    </CardTitle>
+    <CardDescription>为当前登录用户升级会员计划。通常在支付成功后调用。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "plan_id": "monthly", // 'monthly' or 'yearly'
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "success": true,
+  "message": "会员升级成功"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 获取用户使用统计
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /user/usage-stats
+    </CardTitle>
+    <CardDescription>获取当前用户的详细使用统计，包括历史总量、今日使用量以及最近30天的每日数据。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "total_stats": {
+    "total_messages": 150,
+    "total_tokens": 75000,
+    "total_chats": 10
+  },
+  "today_stats": {
+    "today_messages": 20,
+    "today_tokens": 12000
+  },
+  "daily_usage": [
+    { "date": "2024-07-20", "messages": 15, "tokens": 8000 },
+    { "date": "2024-07-21", "messages": 20, "tokens": 12000 }
+  ]
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 获取用户总统计（简化版）
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /user/total-stats
+    </CardTitle>
+    <CardDescription>获取用户的核心总统计数据，用于在界面中快速展示。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "total_messages": 150,
+  "total_tokens": 75000,
+  "total_chats": 10
+}`}
+    </pre>
+  </CardContent>
+</Card>

@@ -1,0 +1,324 @@
+---
+title: "API 参考概览"
+description: "Build AI Template REST API 完整参考文档"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 📚 API 参考概览
+
+Build AI Template 提供了完整的 REST API，支持所有核心功能的编程访问。本文档提供了详细的 API 参考信息。
+
+## 🌐 API 基础信息
+
+### 基础 URL
+
+```
+生产环境: https://your-domain.com/api/v1
+开发环境: http://localhost:8000/api/v1
+```
+
+### API 版本
+
+当前 API 版本：**v1**
+
+我们使用 URL 路径进行版本控制，确保向后兼容性。
+
+### 内容类型
+
+所有 API 请求和响应都使用 JSON 格式：
+
+```http
+Content-Type: application/json
+Accept: application/json
+```
+
+## 🔐 认证方式
+
+Build AI Template 使用 JWT (JSON Web Token) 进行 API 认证。
+
+### 获取访问令牌
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "verification_code": "123456"
+}
+```
+
+### 使用访问令牌
+
+在请求头中包含 Bearer Token：
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## 📋 API 分类
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔐 认证授权 API
+    </CardTitle>
+    <CardDescription>用户登录、注册和权限管理</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 邮箱验证码登录</li>
+      <li>• JWT Token 管理</li>
+      <li>• 用户权限验证</li>
+      <li>• 会话管理</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/authentication" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      👤 用户 API
+    </CardTitle>
+    <CardDescription>用户信息管理和个人设置</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 用户资料管理</li>
+      <li>• 个人设置配置</li>
+      <li>• 使用统计查询</li>
+      <li>• 会员信息管理</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/user" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      💬 对话 API
+    </CardTitle>
+    <CardDescription>聊天对话和消息管理</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 创建和管理对话</li>
+      <li>• 发送和接收消息</li>
+      <li>• 流式响应处理</li>
+      <li>• 对话历史查询</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/chat" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🤖 Agent API
+    </CardTitle>
+    <CardDescription>AI 助手配置和管理</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Agent 配置管理</li>
+      <li>• 模型参数设置</li>
+      <li>• 连接状态检测</li>
+      <li>• 性能监控</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/agent-api" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      👑 管理 API
+    </CardTitle>
+    <CardDescription>管理员功能和系统管理</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 用户管理</li>
+      <li>• 系统统计</li>
+      <li>• 配置管理</li>
+      <li>• 监控数据</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/admin-api" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔗 Webhook API
+    </CardTitle>
+    <CardDescription>事件通知和第三方集成</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 事件订阅</li>
+      <li>• 回调配置</li>
+      <li>• 签名验证</li>
+      <li>• 重试机制</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/api-reference/webhook-api" className="text-blue-600 hover:underline text-sm font-medium">
+        查看详情 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 📊 响应格式
+
+### 成功响应
+
+所有成功的 API 响应都遵循统一格式：
+
+```json
+{
+  "success": true,
+  "data": {
+    // 响应数据
+  },
+  "message": "操作成功",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 错误响应
+
+错误响应包含详细的错误信息：
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "请求参数验证失败",
+    "details": {
+      "field": "email",
+      "reason": "邮箱格式不正确"
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 分页响应
+
+对于列表类 API，使用统一的分页格式：
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      // 数据项列表
+    ],
+    "pagination": {
+      "page": 1,
+      "size": 20,
+      "total": 100,
+      "pages": 5
+    }
+  }
+}
+```
+
+## 🚦 HTTP 状态码
+
+| 状态码 | 含义 | 说明 |
+|--------|------|------|
+| 200 | OK | 请求成功 |
+| 201 | Created | 资源创建成功 |
+| 400 | Bad Request | 请求参数错误 |
+| 401 | Unauthorized | 未认证或认证失败 |
+| 403 | Forbidden | 权限不足 |
+| 404 | Not Found | 资源不存在 |
+| 422 | Unprocessable Entity | 数据验证失败 |
+| 429 | Too Many Requests | 请求频率超限 |
+| 500 | Internal Server Error | 服务器内部错误 |
+
+## 🔄 请求限制
+
+为了保护系统稳定性，我们对 API 请求实施了频率限制：
+
+### 限制规则
+
+- **普通用户**：每分钟 60 次请求
+- **付费用户**：每分钟 120 次请求
+- **管理员**：每分钟 300 次请求
+
+### 限制响应头
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1642234800
+```
+
+### 超限响应
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "请求频率超限，请稍后再试",
+    "retry_after": 60
+  }
+}
+```
+
+## 🧪 API 测试
+
+### 在线 API 文档
+
+访问交互式 API 文档：
+
+- **Swagger UI**：`http://localhost:8000/docs`
+- **ReDoc**：`http://localhost:8000/redoc`
+
+### 使用 cURL 测试
+
+```bash
+# 用户登录
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "verification_code": "123456"
+  }'
+
+# 获取用户信息
+curl -X GET "http://localhost:8000/api/v1/users/me" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```

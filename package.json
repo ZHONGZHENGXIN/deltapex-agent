@@ -1,0 +1,26 @@
+{
+  "name": "build-ai-template",
+  "version": "1.0.0",
+  "description": "用于快速构建 AI 应用的开源模板项目",
+  "private": true,
+  "scripts": {
+    "lint:md": "markdownlint '**/*.md' --ignore node_modules --ignore web/node_modules",
+    "lint:md:fix": "markdownlint '**/*.md' --ignore node_modules --ignore web/node_modules --fix",
+    "format:md": "prettier --write '**/*.md' --ignore-path .gitignore"
+  },
+  "packageManager": "pnpm@10.15.1",
+  "devDependencies": {
+    "markdownlint-cli": "^0.39.0",
+    "prettier": "^3.2.5"
+  },
+  "keywords": [
+    "ai",
+    "template",
+    "nextjs",
+    "fastapi",
+    "typescript",
+    "python"
+  ],
+  "author": "ailln",
+  "license": "MIT"
+}

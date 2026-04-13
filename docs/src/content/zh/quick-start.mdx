@@ -1,0 +1,537 @@
+---
+title: "快速开始"
+description: "5 分钟内运行您的第一个 AI 应用"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# ⚡ 快速开始
+
+本指南将帮助您在 5 分钟内运行 Build AI Template，体验完整的 AI 应用功能
+
+<br/>
+<Alert>
+  <AlertTitle>⚠️ 系统要求</AlertTitle>
+  <AlertDescription>
+    <ul className="mt-2 space-y-1">
+      <li>• CPU：2 核心或以上</li>
+      <li>• 内存：4 GB 或以上</li>
+      <li>• 存储：20 GB 可用空间</li>
+      <li>• 操作系统：Linux、macOS 或 Windows</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 🚀 方式一：Docker 一键部署（推荐）
+
+这是最简单快速的部署方式，适合快速体验和生产环境使用。
+
+### 前置要求
+
+- Docker >= 26.0
+- Docker Compose >= 2.25
+
+### 部署步骤
+
+1. **克隆项目**
+
+  ```bash
+  git clone https://github.com/open-v2ai/build-ai-template.git
+  cd build-ai-template/deploy/
+  ```
+
+2. **配置环境变量**
+
+  ```bash
+  # 复制环境变量模板
+  cp .env.example .env
+
+  # 编辑环境变量文件
+  vim .env  # 或使用您喜欢的编辑器
+  ```
+
+  **必需配置项**：
+
+  ```bash
+  # AI 配置（必填）
+  AGENT_API_KEY=sk-proj-***
+  AGENT_BASE_URL=https://api.openai.ai/v1/chat/completions
+  AGENT_MODEL_NAME=gpt-4.1-mini
+
+  # 邮件配置（必填，用于登录验证码）
+  # 方式一：使用 SMTP
+  MAIL_SEND_METHOD=SMTP
+  MAIL_USERNAME=your-email@gmail.com
+  MAIL_PASSWORD=your-app-password
+  MAIL_FROM=your-email@gmail.com
+  MAIL_SERVER=smtp.gmail.com
+  MAIL_PORT=587
+
+  # 方式二：使用 Resend
+  # MAIL_SEND_METHOD=RESEND
+  # RESEND_API_KEY=re_your-resend-api-key
+  # RESEND_MAIL_FROM=your-email@your-domain.com
+
+  # Stripe 配置（必填，用于支付模块）
+  STRIPE_PUBLIC_KEY=pk-test-***
+  STRIPE_PRIVATE_KEY=sk-test-***
+  STRIPE_WEBHOOK_SECRET=whsec-***
+
+  # 安全配置（建议修改）
+  AUTH_SECRET_KEY=your-super-secret-key-here
+  ```
+  <br/>
+  <Alert>
+    <AlertTitle>📧 邮件配置说明</AlertTitle>
+    <AlertDescription>
+      <div className="mt-2 space-y-2">
+        <p>您可以选择 <strong>SMTP</strong> 或 <strong>Resend</strong> 两种方式发送邮件。</p>
+        <p><strong>SMTP (Gmail 用户)</strong>：需要开启两步验证并生成应用专用密码。</p>
+        <p><strong>Resend 用户</strong>：需要配置 API Key 和在 Resend 验证过的发件域名邮箱。</p>
+        <p><strong>测试环境</strong>：可以使用 <code>AUTH_IS_DEBUG=True</code> 和 <code>AUTH_DEBUG_CODE=888888</code> 跳过邮件验证。</p>
+      </div>
+    </AlertDescription>
+  </Alert>
+
+3. **打包镜像**
+
+  ```bash
+  make build-all
+  ```
+
+4. **启动服务**
+
+  ```bash
+  # 一键启动所有服务
+  docker compose up -d
+
+  # 查看服务状态
+  docker compose ps
+
+  # 查看日志（可选）
+  docker compose logs -f
+  ```
+
+5. **访问应用**
+
+- **用户界面**: http://localhost:8081
+- **管理后台**: http://localhost:8081/admin
+- **API 文档**: http://localhost:8081/v1/api/docs
+- **项目文档**: http://localhost:8082
+
+<br/>
+<Alert>
+  <AlertTitle>🎉 管理员自动设置</AlertTitle>
+  <AlertDescription>
+    第一个通过邮箱验证注册的用户将自动获得管理员权限！
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🛠️ 方式二：开发环境运行
+
+适合开发者进行功能开发和定制。
+
+**前置要求**
+
+- **后端**：Python >= 3.12，uv >= 0.6
+- **前端**：Node.js >= 18.19，pnpm >= 10.11
+
+1. **准备数据库**
+
+```bash
+# 克隆项目
+git clone https://github.com/open-v2ai/build-ai-template.git
+cd build-ai-template
+
+# 启动 PostgreSQL（使用 Docker）
+bash api/scripts/run_postgres.sh
+
+# 启动 Redis（使用 Docker）
+bash api/scripts/run_redis.sh
+```
+
+2. **配置并运行后端**
+
+```bash
+cd api/
+
+# 安装依赖
+uv sync
+
+# 激活虚拟环境
+source venv/bin/activate  # Linux/macOS
+# 或 venv\Scripts\activate  # Windows
+
+# 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件
+vim .env
+
+# AI 配置（必填）
+AGENT_API_KEY=sk-proj-***
+AGENT_BASE_URL=https://api.openai.ai/v1/chat/completions
+AGENT_MODEL_NAME=gpt-4.1-mini
+
+# 邮件配置（必填，用于登录验证码）
+# 方式一：使用 SMTP
+MAIL_SEND_METHOD=SMTP
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=your-email@gmail.com
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+
+# 方式二：使用 Resend
+# MAIL_SEND_METHOD=RESEND
+# RESEND_API_KEY=re_your-resend-api-key
+# RESEND_MAIL_FROM=your-email@your-domain.com
+
+# Stripe 配置（必填，用于支付模块）
+STRIPE_PUBLIC_KEY=pk-test-***
+STRIPE_PRIVATE_KEY=sk-test-***
+STRIPE_WEBHOOK_SECRET=whsec-***
+
+# 运行数据库迁移（可选）
+alembic upgrade head
+
+# 启动开发服务器（端口 8000）
+python -m app.main
+```
+
+3. **配置支付模块**
+
+```bash
+cd api/
+source venv/bin/activate
+
+# 登录 Stripe
+stripe login
+stripe listen --forward-to localhost:8000/api/v1/orders/stripe/webhook
+# 复制生成的 webhook 密钥到 .env 文件中
+STRIPE_WEBHOOK_SECRET=whsec_cexxx
+```
+
+4. **配置并运行应用前端**
+
+```bash
+# 新开终端窗口
+cd web/
+
+# 安装依赖
+pnpm install
+
+# 配置环境变量
+cp .env.example .env
+vim .env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+然后，启动开发服务器：
+
+```bash
+# 启动开发服务器（端口 3000）
+pnpm dev
+```
+
+5. **配置并运行文档前端**
+
+```bash
+# 新开终端窗口
+cd docs/
+
+# 安装依赖
+pnpm install
+
+# 启动开发服务器（端口 4000）
+pnpm dev
+```
+
+6. **访问应用**
+
+- **用户界面**: http://localhost:3000
+- **管理后台**: http://localhost:3000/admin
+- **API 文档**: http://localhost:3000/v1/api/docs
+- **项目文档**: http://localhost:4000
+
+<br/>
+<Alert>
+  <AlertTitle>🎉 管理员自动设置</AlertTitle>
+  <AlertDescription>
+    第一个通过邮箱验证注册的用户将自动获得管理员权限！
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🔧 环境变量配置详解
+
+### 后端环境变量 (api/.env)
+
+<br/>
+<Alert>
+  <AlertTitle>💡 提示</AlertTitle>
+  <AlertDescription>
+    开发环境下，您可以直接复制 <code>api/.env.example</code> 文件并修改。生产环境请参考 <code>deploy/.env.example</code>。
+  </AlertDescription>
+</Alert>
+
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>🤖 AI & Agent</CardTitle>
+    <CardDescription>大模型与 Agent 服务配置</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>AGENT_API_KEY</code> - <b>(必填)</b> OpenAI 或兼容 API 的密钥</div>
+      <div><code>AGENT_BASE_URL</code> - API 地址</div>
+      <div><code>AGENT_MODEL_NAME</code> - 默认使用的模型名称</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>📧 邮件服务</CardTitle>
+    <CardDescription>用于发送登录/注册验证码</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>MAIL_SEND_METHOD</code> - 邮件发送方式 (<code>SMTP</code> 或 <code>RESEND</code>)</div>
+      <hr className="my-2" />
+      <div><strong>SMTP 配置:</strong></div>
+      <div><code>MAIL_USERNAME</code> - SMTP 邮箱用户名</div>
+      <div><code>MAIL_PASSWORD</code> - SMTP 邮箱密码或应用专用密码</div>
+      <div><code>MAIL_FROM</code> - 发件人邮箱地址</div>
+      <div><code>MAIL_SERVER</code> - SMTP 服务器地址</div>
+      <div><code>MAIL_PORT</code> - SMTP 服务器端口</div>
+      <hr className="my-2" />
+      <div><strong>Resend 配置:</strong></div>
+      <div><code>RESEND_API_KEY</code> - Resend API Key</div>
+      <div><code>RESEND_MAIL_FROM</code> - Resend 发件人邮箱</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🗄️ 数据库</CardTitle>
+    <CardDescription>PostgreSQL 和 Redis 连接配置</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><strong>PostgreSQL:</strong></div>
+      <div><code>POSTGRES_HOST</code> - 数据库主机</div>
+      <div><code>POSTGRES_PORT</code> - 数据库端口</div>
+      <div><code>POSTGRES_USER</code> - 数据库用户</div>
+      <div><code>POSTGRES_PASSWORD</code> - 数据库密码</div>
+      <div><code>POSTGRES_DB</code> - 数据库名称</div>
+      <hr className="my-2" />
+      <div><strong>Redis:</strong></div>
+      <div><code>REDIS_HOST</code> - Redis 主机</div>
+      <div><code>REDIS_PORT</code> - Redis 端口</div>
+      <div><code>REDIS_USER</code> - Redis 用户</div>
+      <div><code>REDIS_PASSWORD</code> - Redis 密码</div>
+      <div><code>REDIS_DB</code> - Redis 数据库</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🔒 认证与安全</CardTitle>
+    <CardDescription>JWT 令牌和调试模式</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>AUTH_SECRET_KEY</code> - <b>(必填)</b> 用于签发 JWT 的密钥，请务必修改</div>
+      <div><code>AUTH_ALGORITHM</code> - 用于签发 JWT 的算法</div>
+      <div><code>AUTH_ACCESS_TOKEN_EXPIRE_MINUTES</code> - Access Token 过期时间（分钟）</div>
+      <div><code>AUTH_REFRESH_TOKEN_EXPIRE_DAYS</code> - Refresh Token 过期时间（天）</div>
+      <div><code>AUTH_IS_DEBUG</code> - 是否开启认证调试模式</div>
+      <div><code>AUTH_DEBUG_CODE</code> - 调试模式下的万能验证码</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>💳 支付与会员</CardTitle>
+    <CardDescription>Stripe 支付和会员等级配置</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>STRIPE_PRIVATE_KEY</code> - Stripe 私钥</div>
+      <div><code>STRIPE_PUBLIC_KEY</code> - Stripe 公钥</div>
+      <div><code>STRIPE_WEBHOOK_SECRET</code> - Stripe Webhook 密钥</div>
+      <hr className="my-2" />
+      <div><strong>免费会员</strong></div>
+      <div><code>MEMBERSHIP_FREE_NAME</code> - 名称</div>
+      <div><code>MEMBERSHIP_FREE_DAILY_MESSAGE_LIMIT</code> - 每日消息上限</div>
+      <div><code>MEMBERSHIP_FREE_DAILY_TOKEN_LIMIT</code> - 每日 Token 上限</div>
+      <div><code>MEMBERSHIP_FREE_CONVERSATION_TURN_LIMIT</code> - 对话轮次上限</div>
+      <div><code>MEMBERSHIP_FREE_PRICE</code> - 价格</div>
+      <div><code>MEMBERSHIP_FREE_CURRENCY</code> - 货币</div>
+      <div><code>MEMBERSHIP_FREE_DURATION_DAYS</code> - 有效期(天)</div>
+      <div><code>MEMBERSHIP_FREE_DESCRIPTION</code> - 描述</div>
+      <hr className="my-2" />
+      <div><strong>月度会员</strong></div>
+      <div><code>MEMBERSHIP_MONTHLY_NAME</code> - 名称</div>
+      <div><code>MEMBERSHIP_MONTHLY_DAILY_MESSAGE_LIMIT</code> - 每日消息上限</div>
+      <div><code>MEMBERSHIP_MONTHLY_DAILY_TOKEN_LIMIT</code> - 每日 Token 上限</div>
+      <div><code>MEMBERSHIP_MONTHLY_CONVERSATION_TURN_LIMIT</code> - 对话轮次上限</div>
+      <div><code>MEMBERSHIP_MONTHLY_PRICE</code> - 价格</div>
+      <div><code>MEMBERSHIP_MONTHLY_CURRENCY</code> - 货币</div>
+      <div><code>MEMBERSHIP_MONTHLY_DURATION_DAYS</code> - 有效期(天)</div>
+      <div><code>MEMBERSHIP_MONTHLY_DESCRIPTION</code> - 描述</div>
+      <hr className="my-2" />
+      <div><strong>年度会员</strong></div>
+      <div><code>MEMBERSHIP_YEARLY_NAME</code> - 名称</div>
+      <div><code>MEMBERSHIP_YEARLY_DAILY_MESSAGE_LIMIT</code> - 每日消息上限</div>
+      <div><code>MEMBERSHIP_YEARLY_DAILY_TOKEN_LIMIT</code> - 每日 Token 上限</div>
+      <div><code>MEMBERSHIP_YEARLY_CONVERSATION_TURN_LIMIT</code> - 对话轮次上限</div>
+      <div><code>MEMBERSHIP_YEARLY_PRICE</code> - 价格</div>
+      <div><code>MEMBERSHIP_YEARLY_CURRENCY</code> - 货币</div>
+      <div><code>MEMBERSHIP_YEARLY_DURATION_DAYS</code> - 有效期(天)</div>
+      <div><code>MEMBERSHIP_YEARLY_DESCRIPTION</code> - 描述</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚙️ 应用服务</CardTitle>
+    <CardDescription>API 服务本身的基础配置</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>ENV</code> - 运行环境 (dev/test/prod)</div>
+      <hr className="my-2" />
+      <div><strong>API 配置:</strong></div>
+      <div><code>API_HOST</code> - 主机</div>
+      <div><code>API_PORT</code> - 端口</div>
+      <div><code>API_NAME</code> - 名称</div>
+      <div><code>API_VERSION</code> - 版本</div>
+      <div><code>API_RELOAD</code> - 是否自动重新加载</div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+### 前端环境变量 (web/.env)
+
+<Card className="my-6">
+  <CardHeader>
+    <CardTitle>🖥️ 前端配置</CardTitle>
+    <CardDescription>前端开发所需的基本环境变量。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>NEXT_PUBLIC_API_URL</code> - 后端 API 的访问地址，用于前端请求数据。</div>
+      <div><code>NEXT_PUBLIC_APP_URL</code> - (可选) 当前前端应用的主机名 URL。</div>
+      <div><code>NEXT_PUBLIC_DOCS_URL</code> - (可选) 文档站点的访问地址。</div>
+    </div>
+  </CardContent>
+</Card>
+
+
+---
+
+## ✅ 验证部署
+
+### 1. 检查服务状态
+
+```bash
+# Docker 部署
+docker compose ps
+
+# 开发环境
+curl http://localhost:8000/health  # 后端健康检查
+curl http://localhost:3000         # 前端访问
+```
+
+### 2. 测试核心功能
+
+1. **用户注册登录**
+   - 访问应用首页
+   - 点击登录，输入邮箱
+   - 检查邮箱验证码（或使用调试码 888888）
+
+2. **AI 对话测试**
+   - 登录后创建新对话
+   - 发送测试消息
+   - 验证 AI 响应和流式显示
+
+3. **管理后台访问**
+   - 访问 `/admin` 路径
+   - 查看用户管理、对话统计等功能
+
+---
+
+## 🚨 常见问题
+
+<br/>
+<Alert>
+  <AlertTitle>❌ 服务启动失败</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>检查端口占用</strong>：Docker 部署确保 8081、8082 端口未被占用，开发环境执行确保 8000、3000、4000 端口未被占用。</p>
+      <p><strong>检查 Docker</strong>：确保 Docker 服务正在运行。</p>
+      <p><strong>查看日志</strong>：使用 <code>docker compose logs -f</code> 查看错误信息。</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ AGENT 响应失败</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>检查 API Key</strong>：确保 AGENT API Key 有效且有余额。</p>
+      <p><strong>检查网络</strong>：确保服务器可以访问 AGENT API。</p>
+      <p><strong>检查模型</strong>：确认模型名称正确（如 <code>gpt-4.1-mini</code>）。</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ 邮件发送失败</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>云厂商封禁</strong>：大多数云厂商可能会封禁 SMTP 服务，可以使用 <a href="https://resend.com/" target="_blank" rel="noopener noreferrer">Resend</a> 代替。</p>
+      <p><strong>测试环境</strong>：可以设置 <code>AUTH_IS_DEBUG=True</code> 和 <code>AUTH_DEBUG_CODE=888888</code>，实现跳过邮件验证码直接登录，便于本地开发和测试。</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ 支付模块配置失败</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>检查 Stripe</strong>：确保 Stripe 服务正在运行。</p>
+      <p><strong>检查 webhook 密钥</strong>：确保 webhook 密钥正确。</p>
+      <p><strong>检查 Stripe 账户</strong>：确保 Stripe 账户正确。</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🎯 下一步
+
+恭喜！您已经成功部署了 Build AI Template。接下来您可以：
+
+1. **[了解系统架构](/zh/architecture)** - 深入理解项目的技术架构
+2. **[用户使用指南](/zh/user-guide)** - 学习如何使用各项功能
+3. **[管理员指南](/zh/admin-guide)** - 掌握管理后台的使用方法
+4. **[开发指南](/zh/development)** - 开始定制和扩展功能
+5. **[部署指南](/zh/deployment)** - 了解生产环境部署最佳实践
+
+如果遇到问题，请查看我们的 **[故障排除指南](/zh/troubleshooting)** 或在 GitHub 上提交 Issue。

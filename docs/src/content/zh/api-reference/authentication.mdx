@@ -1,0 +1,258 @@
+---
+title: "认证授权 API"
+description: "用户注册、登录、会话管理和身份验证相关接口"
+---
+
+import { Steps } from 'nextra/components'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 认证授权 API
+
+认证授权模块负责处理用户身份的所有方面，包括注册、登录、密码重置和会话管理。API 使用 JWT (JSON Web Token) 进行身份验证。
+
+## 认证流程
+
+<Steps>
+### 步骤 1: 发送验证码
+用户提供邮箱地址，系统向该邮箱发送一个有时效性的验证码。
+```http
+POST /api/v1/auth/send_code
+```
+
+### 步骤 2: 注册或登录
+用户提交邮箱、验证码以及其他必要信息（如密码）来完成注册或登录。
+- 验证码登录: `POST /api/v1/auth/verify`
+- 密码注册: `POST /api/v1/auth/register`
+- 密码登录: `POST /api/v1/auth/login`
+
+### 步骤 3: 获取 Token
+成功验证后，服务器会返回 `access_token` 和 `refresh_token`。
+
+### 步骤 4: 访问受保护资源
+在请求需要认证的接口时，将 `access_token` 放入 `Authorization` 请求头中。
+```http
+Authorization: Bearer <your_access_token>
+```
+
+### 步骤 5: 刷新 Token
+`access_token` 过期后，使用 `refresh_token` 获取新的 `access_token`。
+```http
+POST /api/v1/auth/refresh_token
+```
+</Steps>
+
+---
+
+## API 端点详情
+
+### 发送验证码
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/send_code
+    </CardTitle>
+    <CardDescription>向指定邮箱发送用于注册、登录或重置密码的验证码。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "email": "user@example.com",
+  "purpose": "register", // 'register', 'login', or 'reset_password'
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "success": true,
+  "message": "验证码已发送"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 验证码登录/验证
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/verify
+    </CardTitle>
+    <CardDescription>验证邮箱和验证码，如果用户存在则完成登录并返回 Token。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "email": "user@example.com",
+  "code": "123456",
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 用户注册
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/register
+    </CardTitle>
+    <CardDescription>使用邮箱、用户名、密码和验证码创建新用户。成功后会自动登录。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "email": "user@example.com",
+  "username": "newuser",
+  "password": "your_strong_password",
+  "code": "123456",
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 密码登录
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/login
+    </CardTitle>
+    <CardDescription>使用邮箱和密码进行登录。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "email": "user@example.com",
+  "password": "your_password",
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 获取当前用户信息
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /auth/me
+    </CardTitle>
+    <CardDescription>获取当前已登录用户的个人资料和会员信息。需要有效的 `access_token`。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求头:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "Authorization": "Bearer <your_access_token>"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "id": 1,
+  "username": "user",
+  "email": "user@example.com",
+  "user_type": "normal",
+  "membership_type": "free",
+  "last_login_at": "2024-01-01T00:00:00Z",
+  "created_at": "2024-01-01T00:00:00Z"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 刷新 Token
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/refresh_token
+    </CardTitle>
+    <CardDescription>使用 `refresh_token` 获取一个新的 `access_token`。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "refresh_token": "your_refresh_token",
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 重置密码
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /auth/reset_password
+    </CardTitle>
+    <CardDescription>在验证邮箱和验证码后，重置为新密码。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "email": "user@example.com",
+  "code": "123456",
+  "new_password": "your_new_strong_password",
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "success": true,
+  "message": "密码重置成功"
+}`}
+    </pre>
+  </CardContent>
+</Card>

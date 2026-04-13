@@ -1,0 +1,44 @@
+---
+title: "Troubleshooting"
+description: "Common issues solutions and troubleshooting guide"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🔧 Troubleshooting
+
+This page collects common issues and solutions encountered when using Build AI Template. If you encounter problems, please check this guide first.
+
+## 🚨 Emergency Quick Fixes
+
+### Service Won't Start
+<br/>
+<Alert>
+  <AlertTitle>❌ Issue: Docker containers fail to start</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Symptoms</strong>: Services don't start properly after running <code>docker compose up -d</code></p>
+      <p><strong>Quick Fix</strong>:</p>
+      <div className="ml-4 space-y-1">
+        <p>1. Check port usage: <code>lsof -i :8080</code></p>
+        <p>2. View logs: <code>docker compose logs -f</code></p>
+        <p>3. Rebuild: <code>docker compose down && docker compose up -d --build</code></p>
+      </div>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## 📞 Getting More Help
+
+If none of the above solutions solve your problem, please get help through the following channels:
+
+### 💬 Community Support
+
+- **GitHub Issues**: [Submit issue reports](https://github.com/open-v2ai/build-ai-template/issues)
+- **Discussion Forum**: [Join community discussions](https://github.com/open-v2ai/build-ai-template/discussions)
+- **Documentation Feedback**: If documentation is incorrect or unclear, please submit feedback
+
+---
+
+We hope this troubleshooting guide helps you quickly resolve issues. If you discover new problems or solutions, welcome to contribute to this documentation!

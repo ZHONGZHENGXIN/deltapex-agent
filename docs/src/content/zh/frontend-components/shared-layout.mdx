@@ -1,0 +1,80 @@
+---
+title: "主要布局 (SharedLayout)"
+description: "应用的核心布局框架，包含侧边栏、头部和内容区域"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+# 主要布局 (SharedLayout)
+
+`SharedLayout` 是整个应用的基础 UI 框架。它包裹了所有主要的 authenticated 页面，提供了一个统一的、包含侧边栏和头部的布局。通过将布局逻辑与页面内容分离，我们确保了在不同页面间导航时，如侧边栏这样的持久性 UI 元素不会重新渲染，从而提供了更流畅的用户体验并保留了 UI 状态（例如滚动位置）。
+
+**文件位置:** `web/components/shared-layout.tsx`
+
+## 功能与职责
+
+- **统一布局**: 提供一个两栏布局，左侧为 `AppSidebar` 侧边栏，右侧为主内容区域。
+- **头部栏**: 在主内容区域顶部包含一个 header，其中包含：
+    - 侧边栏展开/折叠触发器。
+    - 面包屑导航，显示当前页面或对话的标题。
+    - 右侧的操作按钮，包括“升级计划”、主题切换和语言切换。
+- **用户认证检查**: 组件在 `useEffect` Hook 中检查用户是否登录。如果未找到有效的 `access_token`，它会自动将用户重定向到 `/login` 页面。
+- **数据初始化**: 在组件挂载时，它会触发 `useGlobalDataCache` Hook 来获取用户的聊天列表，为侧边栏提供数据。
+- **路由管理**: 监听路由变化以更新面包屑导航的标题，并将路由控制函数传递给子组件。
+
+## 核心组件集成
+
+`SharedLayout` 是多个核心组件的“粘合剂”：
+
+- **`<SidebarProvider>`**: 来自 `components/ui/sidebar`，为侧边栏的展开/折叠状态提供上下文。
+- **`<AppSidebar>`**: 应用的主要侧边栏，负责显示聊天列表和用户信息。`SharedLayout` 将聊天数据和导航回调函数传递给它。
+- **`<UpgradePlanDialog>`**, **`<ThemeToggleButton>`**, **`<LanguageSwitchButton>`**: 位于头部右侧的功能性组件。
+
+## Props
+
+<Card>
+  <CardHeader>
+    <CardTitle>SharedLayoutProps</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <p className="font-semibold">`children: React.ReactNode`</p>
+        <p className="text-sm text-gray-600">
+          必需。要渲染在主内容区域的 React 节点。这通常是 Next.js 的页面组件。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`breadcrumbTitle?: string`</p>
+        <p className="text-sm text-gray-600">
+          可选。用于自定义面包屑导航中显示的标题。如果未提供，组件会尝试根据当前聊天对话的标题或一个默认的标语来动态确定标题。
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 使用示例
+
+`SharedLayout` 通常在应用的根布局文件或具体的页面组件中使用，以包裹需要此布局的页面内容。
+
+```tsx
+// 在 app/[locale]/layout.tsx 或 app/[locale]/page.tsx 中
+import SharedLayout from '@/components/shared-layout';
+
+export default function ChatPageLayout({ children }) {
+  return (
+    <SharedLayout breadcrumbTitle="我的聊天">
+      {children}
+    </SharedLayout>
+  );
+}
+```
+
+<Alert className="mt-6">
+  <AlertTitle>💡 性能提示</AlertTitle>
+  <AlertDescription>
+    将 `SharedLayout` 放在 Next.js 的布局文件 (`layout.tsx`) 中，可以确保在页面导航时布局本身不会重新挂载。这对于保持侧边栏的滚动位置和避免不必要的数据重新获取至关重要。
+  </AlertDescription>
+</Alert>

@@ -1,0 +1,403 @@
+---
+title: "Development Guide Overview"
+description: "Comprehensive development guide to help you customize and extend Build AI Template"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🛠️ Development Guide Overview
+
+Welcome to the Build AI Template development guide! This guide will help you understand the project architecture, master development skills, and build your own AI applications based on the template.
+
+## 🎯 Development Roadmap
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-8">
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔧 Environment Setup
+    </CardTitle>
+    <CardDescription>Configure development environment and toolchain</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Development tools installation</li>
+      <li>• Environment variables configuration</li>
+      <li>• Database initialization</li>
+      <li>• IDE configuration optimization</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/environment-setup" className="text-blue-600 hover:underline text-sm font-medium">
+        Start Setup →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      📁 Project Structure
+    </CardTitle>
+    <CardDescription>Understand code organization and architecture design</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Directory structure explanation</li>
+      <li>• Module responsibility division</li>
+      <li>• Dependency relationship diagram</li>
+      <li>• Configuration file details</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/project-structure" className="text-blue-600 hover:underline text-sm font-medium">
+        Learn Structure →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🐍 Backend Development
+    </CardTitle>
+    <CardDescription>FastAPI and Python development guide</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• API route development</li>
+      <li>• Data model design</li>
+      <li>• Business logic implementation</li>
+      <li>• Middleware and plugins</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/backend-development" className="text-blue-600 hover:underline text-sm font-medium">
+        Backend Dev →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      ⚛️ Frontend Development
+    </CardTitle>
+    <CardDescription>React and Next.js development guide</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Component development standards</li>
+      <li>• State management patterns</li>
+      <li>• UI component customization</li>
+      <li>• Performance optimization tips</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/frontend-development" className="text-blue-600 hover:underline text-sm font-medium">
+        Frontend Dev →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🗄️ Database Management
+    </CardTitle>
+    <CardDescription>Database design and migration management</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Data model design</li>
+      <li>• Migration script writing</li>
+      <li>• Query optimization</li>
+      <li>• Data backup and recovery</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/database-management" className="text-blue-600 hover:underline text-sm font-medium">
+        Database Management →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🤖 AI Integration
+    </CardTitle>
+    <CardDescription>AI platform integration and extension</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• New AI platform integration</li>
+      <li>• Streaming response handling</li>
+      <li>• Model parameter tuning</li>
+      <li>• Error handling mechanisms</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/development/ai-integration" className="text-blue-600 hover:underline text-sm font-medium">
+        AI Integration →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🏗️ Tech Stack Overview
+
+### Backend Tech Stack
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>🐍 Python Ecosystem</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>FastAPI</strong>
+        <p className="text-sm text-muted-foreground">Modern web framework with automatic API documentation</p>
+      </div>
+      <div>
+        <strong>SQLModel</strong>
+        <p className="text-sm text-muted-foreground">Type-safe ORM based on Pydantic and SQLAlchemy</p>
+      </div>
+      <div>
+        <strong>Alembic</strong>
+        <p className="text-sm text-muted-foreground">Database migration tool for version control of database structure</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🗄️ Data Storage</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>PostgreSQL</strong>
+        <p className="text-sm text-muted-foreground">Relational database for storing structured data</p>
+      </div>
+      <div>
+        <strong>Redis</strong>
+        <p className="text-sm text-muted-foreground">In-memory database for caching and session storage</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+### Frontend Tech Stack
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚛️ React Ecosystem</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>Next.js 15</strong>
+        <p className="text-sm text-muted-foreground">React full-stack framework with SSR and SSG support</p>
+      </div>
+      <div>
+        <strong>TypeScript</strong>
+        <p className="text-sm text-muted-foreground">Type-safe JavaScript for enhanced development experience</p>
+      </div>
+      <div>
+        <strong>React 19</strong>
+        <p className="text-sm text-muted-foreground">Latest React version with concurrent features</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎨 UI and Styling</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>Shadcn UI</strong>
+        <p className="text-sm text-muted-foreground">High-quality React component library</p>
+      </div>
+      <div>
+        <strong>Tailwind CSS</strong>
+        <p className="text-sm text-muted-foreground">Atomic CSS framework for rapid UI development</p>
+      </div>
+      <div>
+        <strong>next-intl</strong>
+        <p className="text-sm text-muted-foreground">Internationalization solution with multi-language support</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🚀 Development Workflow
+
+### 1. Feature Development Process
+
+```text
+Requirement Analysis → Design Solution → Backend Implementation → Frontend Development → Testing → Deployment
+    ↓                    ↓                ↓                      ↓                     ↓           ↓
+  User Stories         API Design       Data Models           UI Components        Unit Tests   Production
+```
+
+### 2. Code Commit Standards
+
+```bash
+# Feature development
+git checkout -b feature/new-feature
+git add .
+git commit -m "feat: add new feature description"
+git push origin feature/new-feature
+
+# Create Pull Request
+# Code review
+# Merge to main branch
+```
+
+### 3. Version Release Process
+
+```bash
+# Version tagging
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# Automated deployment
+# Production environment update
+# User notification
+```
+
+## 🧪 Testing Strategy
+<br/>
+<Alert>
+  <AlertTitle>🔍 Testing Pyramid</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Unit Tests</strong>: Test individual functions and components</p>
+      <p><strong>Integration Tests</strong>: Test module interactions</p>
+      <p><strong>End-to-End Tests</strong>: Test complete user workflows</p>
+      <p><strong>Performance Tests</strong>: Test system performance and load capacity</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+### Backend Testing
+
+```python
+# Unit test example
+import pytest
+from app.services.user_service import UserService
+
+def test_create_user():
+    user_data = {"email": "test@example.com", "username": "test"}
+    user = UserService.create_user(user_data)
+    assert user.email == "test@example.com"
+
+# API test example
+def test_user_api(client):
+    response = client.post("/api/v1/users", json=user_data)
+    assert response.status_code == 201
+```
+
+### Frontend Testing
+
+```typescript
+// Component test example
+import { render, screen } from '@testing-library/react'
+import { ChatComponent } from '@/components/chat-component'
+
+test('renders chat component', () => {
+  render(<ChatComponent />)
+  expect(screen.getByText('Send Message')).toBeInTheDocument()
+})
+```
+
+## 📊 Performance Optimization
+
+### Backend Optimization
+
+- **Database Query Optimization**: Use indexes, avoid N+1 queries
+- **Caching Strategy**: Redis caching for hot data
+- **Async Processing**: Use async/await for I/O operations
+- **Connection Pool Management**: Optimize database connection usage
+
+### Frontend Optimization
+
+- **Code Splitting**: Split JavaScript code by routes
+- **Lazy Loading**: Component and image lazy loading
+- **Caching Strategy**: Utilize browser cache and CDN
+- **Performance Monitoring**: Use Web Vitals to monitor performance metrics
+
+## 🔒 Security Best Practices
+
+### Backend Security
+
+- **Input Validation**: Use Pydantic to validate all inputs
+- **SQL Injection Protection**: Use ORM parameterized queries
+- **Authentication & Authorization**: JWT Token and permission control
+- **Sensitive Data Encryption**: Encrypt sensitive information storage
+
+### Frontend Security
+
+- **XSS Protection**: Output escaping and CSP policies
+- **CSRF Protection**: Use CSRF tokens
+- **Secure Transmission**: HTTPS and secure cookies
+- **Dependency Security**: Regularly update dependency packages
+
+## 📚 Learning Resources
+
+### Official Documentation
+
+- **[FastAPI Documentation](https://fastapi.tiangolo.com/)** - Backend framework documentation
+- **[Next.js Documentation](https://nextjs.org/docs)** - Frontend framework documentation
+- **[Shadcn UI Documentation](https://ui.shadcn.com/)** - UI component library documentation
+- **[Tailwind CSS Documentation](https://tailwindcss.com/docs)** - CSS framework documentation
+
+### Community Resources
+
+- **GitHub Repository**: View source code and examples
+- **Discussion Forum**: Participate in technical discussions and Q&A
+- **Blog Articles**: Read best practices and experience sharing
+- **Video Tutorials**: Watch development demos and explanations
+
+## 🎯 Next Steps
+
+Choose the right starting point based on your experience level:
+
+### New Developers
+
+1. **[Environment Setup](/en/development/environment-setup)** - Configure development environment
+2. **[Project Structure](/en/development/project-structure)** - Understand code organization
+3. **[Backend Development](/en/development/backend-development)** - Learn backend development
+
+### Experienced Developers
+
+1. **[AI Integration](/en/development/ai-integration)** - Extend AI functionality
+2. **[Best Practices](/en/development/best-practices)** - Optimize code quality
+3. **[Testing Guide](/en/development/testing)** - Improve test coverage
+
+### Team Leaders
+
+1. Establish development standards and processes
+2. Set up CI/CD pipelines
+3. Establish code review mechanisms
+4. Plan feature iteration roadmap
+
+---
+
+Ready to start developing? Begin with **[Environment Setup](/en/development/environment-setup)**, or jump directly to the technical area you're interested in!

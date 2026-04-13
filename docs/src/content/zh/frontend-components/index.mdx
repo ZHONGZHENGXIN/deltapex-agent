@@ -1,0 +1,66 @@
+---
+title: "组件概览"
+description: "Build AI Template 前端组件架构和核心组件介绍"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🧩 组件概览
+
+Build AI Template 的前端采用基于 Next.js 和 React 的现代化组件架构。我们优先考虑组件的重用性、可维护性和性能，并利用 Tailwind CSS 和 Shadcn UI 构建美观且一致的用户界面。
+
+## 核心设计原则
+
+- **单一职责**: 每个组件都专注于一个核心功能，保持其内部逻辑的简洁性。
+- **组合优于继承**: 通过组合小型、专注的组件来构建复杂的 UI 界面。
+- **状态局部化**: 尽可能将状态保留在最需要它的组件内部。对于全局共享的状态，我们使用 React Context API 和自定义 Hooks。
+- **清晰的 Props 接口**: 每个组件都定义了明确的 TypeScript 接口作为其 Props，并附有 JSDoc 注释，以增强代码的可读性和可维护性。
+- **客户端与服务器组件**: 我们充分利用 Next.js App Router 的优势，明确区分服务器组件（用于数据获取和静态渲染）和客户端组件（用于交互性）。
+
+## 主要组件分类
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+
+<a href="/zh/frontend-components/shared-layout">
+  <Card className="hover:border-blue-500 transition-colors">
+    <CardHeader>
+      <CardTitle>主要布局 (SharedLayout)</CardTitle>
+      <CardDescription>定义了应用的核心框架，包含侧边栏和主内容区域。</CardDescription>
+    </CardHeader>
+  </Card>
+</a>
+
+<a href="/zh/frontend-components/sidebar">
+  <Card className="hover:border-blue-500 transition-colors">
+    <CardHeader>
+      <CardTitle>侧边栏 (Sidebar)</CardTitle>
+      <CardDescription>负责应用导航，展示对话列表和用户菜单。</CardDescription>
+    </CardHeader>
+  </Card>
+</a>
+
+<a href="/zh/frontend-components/chat-page">
+  <Card className="hover:border-blue-500 transition-colors">
+    <CardHeader>
+      <CardTitle>聊天页面 (ChatContentPage)</CardTitle>
+      <CardDescription>项目中最核心的交互组件，负责消息显示和用户输入。</CardDescription>
+    </CardHeader>
+  </Card>
+</a>
+
+<a href="#">
+  <Card className="opacity-50 cursor-not-allowed">
+    <CardHeader>
+      <CardTitle>管理后台组件</CardTitle>
+      <CardDescription>位于 `components/admin/`，用于构建管理后台界面 (文档待补充)。</CardDescription>
+    </CardHeader>
+  </Card>
+</a>
+
+</div>
+
+## UI 组件库
+
+我们使用 [Shadcn UI](https://ui.shadcn.com/) 作为基础 UI 组件库。所有 UI 组件都位于 `components/ui/` 目录。这些组件是经过定制和封装的，以确保它们符合我们项目的设计系统。
+
+在开发过程中，应优先使用这些已有的 UI 组件，以保持界面的一致性。

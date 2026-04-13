@@ -1,0 +1,518 @@
+---
+title: "系统架构"
+description: "深入了解 Build AI Template 的技术架构和设计理念"
+---
+
+import { Mermaid } from '@/components/mermaid'
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🏗️ 系统架构
+
+Build AI Template 采用现代化的微服务架构设计，前后端分离，支持水平扩展和高可用部署。
+
+## 📐 整体架构图
+
+<Mermaid>
+{`
+graph TD
+    subgraph "用户层 (User Layer)"
+        U1["Web 用户界面<br>(Next.js)"]
+        U2["移动端适配<br>(Responsive)"]
+        U3["管理后台界面<br>(Admin Panel)"]
+    end
+
+    subgraph "网关层 (Gateway Layer)"
+        G["Nginx 反向代理 +<br>负载均衡"]
+    end
+
+    subgraph "应用层 (Application Layer)"
+        APP_F["前端应用 (Web)<br>Next.js, React, TypeScript"]
+        APP_B["后端 API (Backend)<br>FastAPI, Python, SQLModel"]
+    end
+
+    subgraph "数据层 (Data Layer)"
+        D_PG["PostgreSQL<br>主数据库"]
+        D_RD["Redis<br>缓存/会话"]
+        D_AI["AI 平台集成<br>OpenAI, 等."]
+        D_FS["文件存储<br>可选"]
+    end
+
+    U1 --> G
+    U2 --> G
+    U3 --> G
+
+    G --> APP_F
+    G --> APP_B
+
+    APP_B --> D_PG
+    APP_B --> D_RD
+    APP_B --> D_AI
+    APP_B --> D_FS
+`}
+</Mermaid>
+
+## 🔧 技术栈详解
+
+### 前端技术栈
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚛️ 核心框架</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>Next.js 15.3</strong> - React 全栈框架，支持 SSR/SSG</li>
+      <li><strong>React 19</strong> - 最新的 React 版本，支持并发特性</li>
+      <li><strong>TypeScript</strong> - 类型安全的 JavaScript 超集</li>
+      <li><strong>App Router</strong> - Next.js 新一代路由系统</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎨 UI 和样式</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>Shadcn UI</strong> - 高质量的 React 组件库</li>
+      <li><strong>Tailwind CSS</strong> - 原子化 CSS 框架</li>
+      <li><strong>Radix UI</strong> - 无障碍的底层 UI 组件</li>
+      <li><strong>Lucide React</strong> - 现代化图标库</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🌍 国际化和状态</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>next-intl</strong> - Next.js 国际化解决方案</li>
+      <li><strong>React Hooks</strong> - 状态管理和副作用处理</li>
+      <li><strong>Context API</strong> - 全局状态共享</li>
+      <li><strong>SWR</strong> - 数据获取和缓存（可选）</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🛠️ 开发工具</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>pnpm</strong> - 高效的包管理器</li>
+      <li><strong>ESLint</strong> - 代码质量检查</li>
+      <li><strong>Prettier</strong> - 代码格式化</li>
+      <li><strong>Turbopack</strong> - 快速的构建工具</li>
+    </ul>
+  </CardContent>
+</Card>
+
+</div>
+
+### 后端技术栈
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>🐍 核心框架</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>FastAPI</strong> - 现代化的 Python Web 框架</li>
+      <li><strong>Python 3.12</strong> - 最新的 Python 版本</li>
+      <li><strong>Pydantic v2</strong> - 数据验证和序列化</li>
+      <li><strong>Uvicorn</strong> - ASGI 服务器</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🗄️ 数据库和 ORM</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>SQLModel</strong> - 类型安全的 ORM</li>
+      <li><strong>PostgreSQL</strong> - 关系型数据库</li>
+      <li><strong>Alembic</strong> - 数据库迁移工具</li>
+      <li><strong>Redis</strong> - 内存数据库和缓存</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🔐 认证和安全</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>JWT</strong> - JSON Web Token 认证</li>
+      <li><strong>bcrypt</strong> - 密码哈希（如需要）</li>
+      <li><strong>CORS</strong> - 跨域资源共享</li>
+      <li><strong>Rate Limiting</strong> - 请求频率限制</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🤖 AI 集成</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li><strong>OpenAI API</strong> - GPT 模型集成</li>
+      <li><strong>httpx</strong> - 异步 HTTP 客户端</li>
+      <li><strong>SSE</strong> - 服务器发送事件（流式响应）</li>
+      <li><strong>多平台适配</strong> - 支持多种 AI 平台</li>
+    </ul>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🏛️ 架构设计原则
+
+### 1. 分层架构
+
+<Mermaid>
+{`
+graph TD
+    A["表示层 (Presentation)<br>用户界面和交互"]
+    B["应用层 (Application)<br>业务逻辑和流程控制"]
+    C["领域层 (Domain)<br>核心业务模型和规则"]
+    D["基础设施层 (Infrastructure)<br>数据访问和外部服务"]
+    A --> B --> C --> D
+`}
+</Mermaid>
+
+**优势**：
+- 清晰的职责分离
+- 易于测试和维护
+- 支持独立演进
+
+### 2. 微服务理念
+
+虽然当前是单体应用，但架构设计支持未来拆分为微服务：
+
+- **用户服务**：用户管理、认证授权
+- **对话服务**：聊天功能、消息处理
+- **AI 服务**：AI 平台集成、模型调用
+- **管理服务**：后台管理、数据统计
+
+### 3. 事件驱动
+
+使用事件驱动模式处理异步操作：
+
+```python
+# 示例：用户注册事件
+@event_handler("user.registered")
+async def on_user_registered(event: UserRegisteredEvent):
+    # 发送欢迎邮件
+    await send_welcome_email(event.user_id)
+    # 初始化用户配置
+    await init_user_settings(event.user_id)
+```
+
+## 🔄 数据流架构
+
+### 1. 用户认证流程
+
+<Mermaid>
+{`
+graph LR
+    A["用户输入邮箱<br>(前端表单)"] --> B["发送验证码<br>(邮件服务)"]
+    B --> C["验证码校验<br>(Redis缓存)"]
+    C --> D["生成 JWT Token<br>(JWT签名)"]
+    D --> E["存储用户会话<br>(Redis存储)"]
+`}
+</Mermaid>
+
+### 2. AI 对话流程
+
+<Mermaid>
+{`
+graph LR
+    A["用户发送消息<br>(WebSocket)"] --> B["权限验证<br>(JWT验证)"]
+    B --> C["消息预处理<br>(内容过滤)"]
+    C --> D["AI 平台调用<br>(OpenAI API)"]
+    D --> E["流式响应<br>(SSE推送)"]
+    E --> F["消息存储<br>(PostgreSQL)"]
+`}
+</Mermaid>
+
+### 3. 数据同步流程
+
+<Mermaid>
+{`
+graph LR
+    A["数据库写入<br>(PostgreSQL)"] --> B["缓存更新<br>(Redis)"]
+    B --> C["事件发布<br>(EventBus)"]
+    C --> D["前端通知<br>(WebSocket)"]
+    D --> E["UI 更新<br>(React State)"]
+`}
+</Mermaid>
+
+## 📊 数据库设计
+
+### 核心实体关系图
+
+<Mermaid>
+{`
+erDiagram
+    USER {
+        int id PK
+        string email
+        string username
+        string role
+        datetime created_at
+    }
+    CHAT {
+        int id PK
+        int user_id FK
+        int agent_id FK
+        string title
+        datetime created_at
+    }
+    MESSAGE {
+        int id PK
+        int chat_id FK
+        string role
+        string content
+        int tokens
+        datetime created_at
+    }
+    AGENT {
+        int id PK
+        string name
+        string model
+        json config
+        string status
+    }
+    MEMBERSHIP {
+        int id PK
+        string type
+        json limits
+        float price
+        int duration
+    }
+
+    USER ||--o{ CHAT : "拥有"
+    CHAT ||--o{ MESSAGE : "包含"
+    USER }o--o{ AGENT : "可使用"
+`}
+</Mermaid>
+
+### 数据库表结构
+<br/>
+<Alert>
+  <AlertTitle>📋 主要数据表</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>users</strong> - 用户基本信息和权限</p>
+      <p><strong>agents</strong> - AI 助手配置和状态</p>
+      <p><strong>chats</strong> - 对话会话信息</p>
+      <p><strong>messages</strong> - 具体的消息内容</p>
+      <p><strong>memberships</strong> - 会员计划和权益</p>
+      <p><strong>orders</strong> - 订单和支付记录</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## 🔌 API 设计
+
+### RESTful API 规范
+
+```text
+GET    /api/v1/users          # 获取用户列表
+POST   /api/v1/users          # 创建用户
+GET    /api/v1/users/{id}     # 获取特定用户
+PUT    /api/v1/users/{id}     # 更新用户信息
+DELETE /api/v1/users/{id}     # 删除用户
+
+GET    /api/v1/chats          # 获取对话列表
+POST   /api/v1/chats          # 创建新对话
+GET    /api/v1/chats/{id}     # 获取对话详情
+POST   /api/v1/chats/{id}/messages  # 发送消息
+```
+
+### 流式 API 设计
+
+```python
+@router.post("/chats/{chat_id}/stream")
+async def stream_chat(chat_id: int, message: MessageCreate):
+    """流式对话 API"""
+    async def generate():
+        async for chunk in ai_service.stream_chat(chat_id, message):
+            yield f"data: {json.dumps(chunk)}\n\n"
+    
+    return StreamingResponse(generate(), media_type="text/plain")
+```
+
+## 🔒 安全架构
+
+### 1. 认证和授权
+
+<Mermaid>
+{`
+graph TD
+    A["邮箱验证<br>• 验证码<br>• 时效性<br>• 频率限制"]
+    B["JWT Token<br>• 用户信息<br>• 过期时间<br>• 签名验证"]
+    C["权限验证<br>• 角色检查<br>• 资源访问<br>• 操作权限"]
+    A --> B --> C
+`}
+</Mermaid>
+
+### 2. 数据安全
+
+- **传输加密**：HTTPS/TLS 1.3
+- **存储加密**：敏感数据加密存储
+- **访问控制**：基于角色的权限控制（RBAC）
+- **审计日志**：完整的操作日志记录
+
+### 3. API 安全
+
+- **请求限流**：防止 API 滥用
+- **输入验证**：Pydantic 数据验证
+- **SQL 注入防护**：ORM 参数化查询
+- **CORS 配置**：跨域请求控制
+
+## 📈 性能优化
+
+### 1. 缓存策略
+
+<Mermaid>
+{`
+graph LR
+    A["浏览器缓存<br>• 静态资源<br>• API 响应<br>• 用户设置"]
+    B["CDN 缓存<br>• 图片资源<br>• JS/CSS<br>• 字体文件"]
+    C["Redis 缓存<br>• 会话数据<br>• 查询结果<br>• 限流计数"]
+`}
+</Mermaid>
+
+### 2. 数据库优化
+
+- **索引优化**：关键字段建立索引
+- **查询优化**：避免 N+1 查询问题
+- **连接池**：数据库连接池管理
+- **读写分离**：支持主从数据库（可选）
+
+### 3. 前端优化
+
+- **代码分割**：按路由分割 JavaScript 代码
+- **懒加载**：组件和图片懒加载
+- **预加载**：关键资源预加载
+- **压缩优化**：Gzip/Brotli 压缩
+
+## 🚀 部署架构
+
+### 1. 容器化部署
+
+```yaml
+version: '3.8'
+services:
+  nginx:
+    image: nginx:alpine
+    ports: ["80:80", "443:443"]
+    
+  web:
+    build: ./web
+    environment:
+      - NODE_ENV=production
+      
+  api:
+    build: ./api
+    environment:
+      - ENV=production
+      
+  postgres:
+    image: postgres:15
+    volumes: ["./data/postgres:/var/lib/postgresql/data"]
+    
+  redis:
+    image: redis:7-alpine
+    volumes: ["./data/redis:/data"]
+```
+
+### 2. 高可用部署
+
+<Mermaid>
+{`
+graph TD
+    LB["负载均衡器<br>(HAProxy)"]
+    subgraph "Nginx 服务器"
+        N1["Nginx 1"]
+        N2["Nginx 2"]
+    end
+    subgraph "API 服务器"
+        API1["API-1<br>(FastAPI)"]
+        API2["API-2<br>(FastAPI)"]
+    end
+    DB["PostgreSQL<br>(主从复制)"]
+
+    LB --> N1
+    LB --> N2
+    N1 --> API1
+    N1 --> API2
+    N2 --> API1
+    N2 --> API2
+    API1 --> DB
+    API2 --> DB
+`}
+</Mermaid>
+
+## 🔍 监控和日志
+
+### 1. 应用监控
+
+- **性能监控**：响应时间、吞吐量
+- **错误监控**：异常捕获和告警
+- **资源监控**：CPU、内存、磁盘使用
+- **业务监控**：用户活跃度、对话统计
+
+### 2. 日志系统
+
+```python
+# 结构化日志示例
+logger.info(
+    "用户登录成功",
+    extra={
+        "user_id": user.id,
+        "email": user.email,
+        "ip_address": request.client.host,
+        "user_agent": request.headers.get("user-agent")
+    }
+)
+```
+
+## 🔮 扩展性设计
+
+### 1. 水平扩展
+
+- **无状态设计**：API 服务无状态，支持水平扩展
+- **数据库分片**：支持数据库水平分片
+- **缓存集群**：Redis 集群部署
+- **CDN 加速**：静态资源 CDN 分发
+
+### 2. 功能扩展
+
+- **插件系统**：支持第三方插件开发
+- **API 网关**：统一 API 管理和路由
+- **消息队列**：异步任务处理
+- **微服务拆分**：按业务域拆分服务
+
+---
+
+## 📚 相关文档
+
+- **[开发指南](/zh/development)** - 了解如何基于此架构进行开发
+- **[部署指南](/zh/deployment)** - 学习生产环境部署最佳实践
+- **[API 参考](/zh/api-reference)** - 查看完整的 API 文档
+- **[故障排除](/zh/troubleshooting)** - 解决常见的架构和部署问题

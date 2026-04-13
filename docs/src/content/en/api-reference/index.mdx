@@ -1,0 +1,391 @@
+---
+title: "API Reference Overview"
+description: "Build AI Template REST API complete reference documentation"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 📚 API Reference Overview
+
+Build AI Template provides a complete REST API that supports programmatic access to all core features. This documentation provides detailed API reference information.
+
+## 🌐 API Basic Information
+
+### Base URL
+
+```
+Production: https://your-domain.com/api/v1
+Development: http://localhost:8000/api/v1
+```
+
+### API Version
+
+Current API version: **v1**
+
+We use URL path versioning to ensure backward compatibility.
+
+### Content Type
+
+All API requests and responses use JSON format:
+
+```http
+Content-Type: application/json
+Accept: application/json
+```
+
+## 🔐 Authentication
+
+Build AI Template uses JWT (JSON Web Token) for API authentication.
+
+### Get Access Token
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "verification_code": "123456"
+}
+```
+
+### Use Access Token
+
+Include Bearer Token in request headers:
+
+```http
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## 📋 API Categories
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-8">
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔐 Authentication API
+    </CardTitle>
+    <CardDescription>User login, registration and permission management</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Email verification code login</li>
+      <li>• JWT Token management</li>
+      <li>• User permission verification</li>
+      <li>• Session management</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/authentication" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      👤 User API
+    </CardTitle>
+    <CardDescription>User information management and personal settings</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• User profile management</li>
+      <li>• Personal settings configuration</li>
+      <li>• Usage statistics query</li>
+      <li>• Membership information management</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/user-api" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      💬 Chat API
+    </CardTitle>
+    <CardDescription>Chat conversations and message management</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Create and manage conversations</li>
+      <li>• Send and receive messages</li>
+      <li>• Streaming response handling</li>
+      <li>• Conversation history query</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/chat-api" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🤖 Agent API
+    </CardTitle>
+    <CardDescription>AI assistant configuration and management</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Agent configuration management</li>
+      <li>• Model parameter settings</li>
+      <li>• Connection status detection</li>
+      <li>• Performance monitoring</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/agent-api" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      👑 Admin API
+    </CardTitle>
+    <CardDescription>Administrator functions and system management</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• User management</li>
+      <li>• System statistics</li>
+      <li>• Configuration management</li>
+      <li>• Monitoring data</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/admin-api" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔗 Webhook API
+    </CardTitle>
+    <CardDescription>Event notifications and third-party integrations</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• Event subscription</li>
+      <li>• Callback configuration</li>
+      <li>• Signature verification</li>
+      <li>• Retry mechanism</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/en/api-reference/webhook-api" className="text-blue-600 hover:underline text-sm font-medium">
+        View Details →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 📊 Response Format
+
+### Success Response
+
+All successful API responses follow a unified format:
+
+```json
+{
+  "success": true,
+  "data": {
+    // Response data
+  },
+  "message": "Operation successful",
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Error Response
+
+Error responses contain detailed error information:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request parameter validation failed",
+    "details": {
+      "field": "email",
+      "reason": "Invalid email format"
+    }
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### Paginated Response
+
+For list APIs, use unified pagination format:
+
+```json
+{
+  "success": true,
+  "data": {
+    "items": [
+      // Data item list
+    ],
+    "pagination": {
+      "page": 1,
+      "size": 20,
+      "total": 100,
+      "pages": 5
+    }
+  }
+}
+```
+
+## 🚦 HTTP Status Codes
+
+| Status Code | Meaning | Description |
+|-------------|---------|-------------|
+| 200 | OK | Request successful |
+| 201 | Created | Resource created successfully |
+| 400 | Bad Request | Request parameter error |
+| 401 | Unauthorized | Unauthenticated or authentication failed |
+| 403 | Forbidden | Insufficient permissions |
+| 404 | Not Found | Resource not found |
+| 422 | Unprocessable Entity | Data validation failed |
+| 429 | Too Many Requests | Request rate limit exceeded |
+| 500 | Internal Server Error | Server internal error |
+
+## 🔄 Rate Limiting
+
+To protect system stability, we implement rate limiting on API requests:
+
+### Limit Rules
+
+- **Regular Users**: 60 requests per minute
+- **Premium Users**: 120 requests per minute
+- **Administrators**: 300 requests per minute
+
+### Rate Limit Headers
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 59
+X-RateLimit-Reset: 1642234800
+```
+
+### Rate Limit Exceeded Response
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Request rate limit exceeded, please try again later",
+    "retry_after": 60
+  }
+}
+```
+
+## 🧪 API Testing
+
+### Online API Documentation
+
+Access interactive API documentation:
+
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
+
+### Testing with cURL
+
+```bash
+# User login
+curl -X POST "http://localhost:8000/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "verification_code": "123456"
+  }'
+
+# Get user information
+curl -X GET "http://localhost:8000/api/v1/users/me" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Using Postman
+
+We provide a Postman collection file with example requests for all APIs:
+
+1. Download [Postman Collection](https://github.com/open-v2ai/build-ai-template/blob/main/docs/postman/build-ai-template.json)
+2. Import into Postman
+3. Configure environment variables
+4. Start testing
+
+## 🔒 Security Best Practices
+
+### API Key Security
+
+- Don't hardcode API keys in client-side code
+- Use environment variables to store sensitive information
+- Regularly rotate API keys
+
+### HTTPS Usage
+
+- Production environment must use HTTPS
+- Verify SSL certificates
+- Use latest TLS version
+
+### Input Validation
+
+- Validate all input parameters
+- Use parameterized queries to prevent injection attacks
+- Limit request size and frequency
+
+## 📚 SDKs and Client Libraries
+
+### Official SDKs
+
+We provide official SDKs for multiple programming languages:
+
+- **Python**: `pip install build-ai-template-sdk`
+- **JavaScript/Node.js**: `npm install build-ai-template-sdk`
+- **Go**: `go get github.com/open-v2ai/build-ai-template-go-sdk`
+
+### Third-party Clients
+
+Community-contributed client libraries:
+
+- **PHP**: [build-ai-template-php](https://github.com/community/build-ai-template-php)
+- **Java**: [build-ai-template-java](https://github.com/community/build-ai-template-java)
+- **C#**: [build-ai-template-dotnet](https://github.com/community/build-ai-template-dotnet)
+
+## 🆘 Get Help
+
+If you encounter problems using the API:
+<br/>
+<Alert>
+  <AlertTitle>💬 Multiple Support Channels</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>API Documentation</strong>: View detailed interface descriptions</p>
+      <p><strong>Example Code</strong>: Refer to examples in the GitHub repository</p>
+      <p><strong>Community Discussion</strong>: Ask questions in GitHub Discussions</p>
+      <p><strong>Issue Reports</strong>: Report API issues through GitHub Issues</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+---
+
+Ready to start using the API? Begin with **[Authentication](/en/api-reference/authentication)**, or directly check the API category you're interested in!

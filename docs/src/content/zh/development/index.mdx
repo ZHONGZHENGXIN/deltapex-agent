@@ -1,0 +1,403 @@
+---
+title: "开发指南概览"
+description: "全面的开发指南，帮助您基于 Build AI Template 进行定制和扩展"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🛠️ 开发指南概览
+
+欢迎来到 Build AI Template 开发指南！本指南将帮助您深入了解项目架构，掌握开发技能，并基于模板构建您自己的 AI 应用。
+
+## 🎯 开发路线图
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-8">
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🔧 环境搭建
+    </CardTitle>
+    <CardDescription>配置开发环境和工具链</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 开发工具安装</li>
+      <li>• 环境变量配置</li>
+      <li>• 数据库初始化</li>
+      <li>• IDE 配置优化</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/environment-setup" className="text-blue-600 hover:underline text-sm font-medium">
+        开始配置 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      📁 项目结构
+    </CardTitle>
+    <CardDescription>理解代码组织和架构设计</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 目录结构说明</li>
+      <li>• 模块职责划分</li>
+      <li>• 依赖关系图</li>
+      <li>• 配置文件详解</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/project-structure" className="text-blue-600 hover:underline text-sm font-medium">
+        了解结构 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🐍 后端开发
+    </CardTitle>
+    <CardDescription>FastAPI 和 Python 开发指南</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• API 路由开发</li>
+      <li>• 数据模型设计</li>
+      <li>• 业务逻辑实现</li>
+      <li>• 中间件和插件</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/backend-development" className="text-blue-600 hover:underline text-sm font-medium">
+        后端开发 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      ⚛️ 前端开发
+    </CardTitle>
+    <CardDescription>React 和 Next.js 开发指南</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 组件开发规范</li>
+      <li>• 状态管理模式</li>
+      <li>• UI 组件定制</li>
+      <li>• 性能优化技巧</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/frontend-development" className="text-blue-600 hover:underline text-sm font-medium">
+        前端开发 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🗄️ 数据库管理
+    </CardTitle>
+    <CardDescription>数据库设计和迁移管理</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 数据模型设计</li>
+      <li>• 迁移脚本编写</li>
+      <li>• 查询优化</li>
+      <li>• 数据备份恢复</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/database-management" className="text-blue-600 hover:underline text-sm font-medium">
+        数据库管理 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🤖 AI 集成
+    </CardTitle>
+    <CardDescription>AI 平台集成和扩展</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>• 新 AI 平台接入</li>
+      <li>• 流式响应处理</li>
+      <li>• 模型参数调优</li>
+      <li>• 错误处理机制</li>
+    </ul>
+    <div className="mt-4">
+      <a href="/zh/development/ai-integration" className="text-blue-600 hover:underline text-sm font-medium">
+        AI 集成 →
+      </a>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🏗️ 技术栈概览
+
+### 后端技术栈
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>🐍 Python 生态</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>FastAPI</strong>
+        <p className="text-sm text-muted-foreground">现代化的 Web 框架，自动生成 API 文档</p>
+      </div>
+      <div>
+        <strong>SQLModel</strong>
+        <p className="text-sm text-muted-foreground">类型安全的 ORM，基于 Pydantic 和 SQLAlchemy</p>
+      </div>
+      <div>
+        <strong>Alembic</strong>
+        <p className="text-sm text-muted-foreground">数据库迁移工具，版本控制数据库结构</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🗄️ 数据存储</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>PostgreSQL</strong>
+        <p className="text-sm text-muted-foreground">关系型数据库，存储结构化数据</p>
+      </div>
+      <div>
+        <strong>Redis</strong>
+        <p className="text-sm text-muted-foreground">内存数据库，用于缓存和会话存储</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+### 前端技术栈
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚛️ React 生态</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>Next.js 15</strong>
+        <p className="text-sm text-muted-foreground">React 全栈框架，支持 SSR 和 SSG</p>
+      </div>
+      <div>
+        <strong>TypeScript</strong>
+        <p className="text-sm text-muted-foreground">类型安全的 JavaScript，提升开发体验</p>
+      </div>
+      <div>
+        <strong>React 19</strong>
+        <p className="text-sm text-muted-foreground">最新的 React 版本，支持并发特性</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🎨 UI 和样式</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-3">
+      <div>
+        <strong>Shadcn UI</strong>
+        <p className="text-sm text-muted-foreground">高质量的 React 组件库</p>
+      </div>
+      <div>
+        <strong>Tailwind CSS</strong>
+        <p className="text-sm text-muted-foreground">原子化 CSS 框架，快速构建界面</p>
+      </div>
+      <div>
+        <strong>next-intl</strong>
+        <p className="text-sm text-muted-foreground">国际化解决方案，支持多语言</p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🚀 开发工作流
+
+### 1. 功能开发流程
+
+```text
+需求分析 → 设计方案 → 后端实现 → 前端开发 → 测试验证 → 部署上线
+    ↓         ↓         ↓         ↓         ↓         ↓
+  用户故事   API设计   数据模型   UI组件    单元测试   生产环境
+```
+
+### 2. 代码提交规范
+
+```bash
+# 功能开发
+git checkout -b feature/new-feature
+git add .
+git commit -m "feat: 添加新功能描述"
+git push origin feature/new-feature
+
+# 创建 Pull Request
+# 代码审查
+# 合并到主分支
+```
+
+### 3. 版本发布流程
+
+```bash
+# 版本标记
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# 自动化部署
+# 生产环境更新
+# 用户通知
+```
+
+## 🧪 测试策略
+<br/>
+<Alert>
+  <AlertTitle>🔍 测试金字塔</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>单元测试</strong>：测试单个函数和组件</p>
+      <p><strong>集成测试</strong>：测试模块间的交互</p>
+      <p><strong>端到端测试</strong>：测试完整的用户流程</p>
+      <p><strong>性能测试</strong>：测试系统性能和负载能力</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+### 后端测试
+
+```python
+# 单元测试示例
+import pytest
+from app.services.user_service import UserService
+
+def test_create_user():
+    user_data = {"email": "test@example.com", "username": "test"}
+    user = UserService.create_user(user_data)
+    assert user.email == "test@example.com"
+
+# API 测试示例
+def test_user_api(client):
+    response = client.post("/api/v1/users", json=user_data)
+    assert response.status_code == 201
+```
+
+### 前端测试
+
+```typescript
+// 组件测试示例
+import { render, screen } from '@testing-library/react'
+import { ChatComponent } from '@/components/chat-component'
+
+test('renders chat component', () => {
+  render(<ChatComponent />)
+  expect(screen.getByText('发送消息')).toBeInTheDocument()
+})
+```
+
+## 📊 性能优化
+
+### 后端优化
+
+- **数据库查询优化**：使用索引，避免 N+1 查询
+- **缓存策略**：Redis 缓存热点数据
+- **异步处理**：使用 async/await 处理 I/O 操作
+- **连接池管理**：优化数据库连接使用
+
+### 前端优化
+
+- **代码分割**：按路由分割 JavaScript 代码
+- **懒加载**：组件和图片懒加载
+- **缓存策略**：利用浏览器缓存和 CDN
+- **性能监控**：使用 Web Vitals 监控性能指标
+
+## 🔒 安全最佳实践
+
+### 后端安全
+
+- **输入验证**：使用 Pydantic 验证所有输入
+- **SQL 注入防护**：使用 ORM 参数化查询
+- **认证授权**：JWT Token 和权限控制
+- **敏感数据加密**：加密存储敏感信息
+
+### 前端安全
+
+- **XSS 防护**：输出转义和 CSP 策略
+- **CSRF 防护**：使用 CSRF Token
+- **安全传输**：HTTPS 和安全 Cookie
+- **依赖安全**：定期更新依赖包
+
+## 📚 学习资源
+
+### 官方文档
+
+- **[FastAPI 文档](https://fastapi.tiangolo.com/)** - 后端框架文档
+- **[Next.js 文档](https://nextjs.org/docs)** - 前端框架文档
+- **[Shadcn UI 文档](https://ui.shadcn.com/)** - UI 组件库文档
+- **[Tailwind CSS 文档](https://tailwindcss.com/docs)** - CSS 框架文档
+
+### 社区资源
+
+- **GitHub 仓库**：查看源代码和示例
+- **讨论区**：参与技术讨论和问答
+- **博客文章**：阅读最佳实践和经验分享
+- **视频教程**：观看开发演示和讲解
+
+## 🎯 下一步行动
+
+根据您的经验水平，选择合适的起点：
+
+### 新手开发者
+
+1. **[环境搭建](/zh/development/environment-setup)** - 配置开发环境
+2. **[项目结构](/zh/development/project-structure)** - 了解代码组织
+3. **[后端开发](/zh/development/backend-development)** - 学习后端开发
+
+### 有经验的开发者
+
+1. **[AI 集成](/zh/development/ai-integration)** - 扩展 AI 功能
+2. **[最佳实践](/zh/development/best-practices)** - 优化代码质量
+3. **[测试指南](/zh/development/testing)** - 完善测试覆盖
+
+### 团队负责人
+
+1. 制定开发规范和流程
+2. 设置 CI/CD 流水线
+3. 建立代码审查机制
+4. 规划功能迭代路线
+
+---
+
+准备开始开发了吗？从 **[环境搭建](/zh/development/environment-setup)** 开始，或者直接跳转到您感兴趣的技术领域！

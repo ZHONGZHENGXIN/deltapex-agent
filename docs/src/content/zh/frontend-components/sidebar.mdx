@@ -1,0 +1,72 @@
+---
+title: "侧边栏 (Sidebar)"
+description: "应用的主要导航组件，包含对话列表、用户信息和主要操作"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+# 侧边栏 (Sidebar)
+
+`AppSidebar` 是应用的核心导航区域，它位于 `SharedLayout` 的左侧。它不仅为用户提供了一种浏览和管理他们对话的方式，还集成了用户信息显示和关键操作入口。
+
+**文件位置:** `web/components/sidebar/app-sidebar.tsx`
+
+## 主要功能
+
+- **可折叠设计**: 侧边栏支持两种状态：完全展开（显示图标和文本）和图标模式（仅显示图标），以节省屏幕空间。这由 `<Sidebar collapsible="icon">` 属性控制。
+- **品牌 Logo**: 顶部显示应用 Logo，并链接到文档站点。
+- **新建对话**: 一个显著的“新建对话”按钮，允许用户快速开始新的 AI 对话。
+    - **快捷键**: 支持 `Cmd/Ctrl + I` 快捷键来触发新建对话操作。
+- **对话列表**:
+    - 主体部分通过 `NavChatList` 组件渲染用户的对话历史列表。
+    - 列表是可滚动的，并高亮显示当前选中的对话。
+- **用户信息**: 底部通过 `NavUser` 组件显示当前登录用户的用户名和邮箱，并提供访问用户设置、订单历史和登出等功能的入口。
+
+## 核心子组件
+
+`AppSidebar` 是由几个更小的、职责单一的组件组合而成的：
+
+- **`<NavChatList>`**: 负责渲染可滚动的对话列表。它接收 `chats` 数组，并处理单个对话项的点击事件。
+- **`<NavUser>`**: 负责显示用户信息和相关的操作菜单（如“设置”、“登出”）。
+- **`<Sidebar>` 及其子组件**: 这些来自我们的 UI 库 (`components/ui/sidebar`)，提供了侧边栏的基本结构和样式，如 `SidebarHeader`, `SidebarContent`, `SidebarFooter` 等。
+
+## Props
+
+<Card>
+  <CardHeader>
+    <CardTitle>AppSidebarProps</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <p className="font-semibold">`chats: Chat[]`</p>
+        <p className="text-sm text-gray-600">
+          必需。一个 `Chat` 对象数组，用于在 `NavChatList` 中显示。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`onSelectChat?: (chat: Chat) => void`</p>
+        <p className="text-sm text-gray-600">
+          可选。当用户在列表中点击一个对话时触发的回调函数。通常用于导航到该对话的页面。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`onNewChat?: () => void`</p>
+        <p className="text-sm text-gray-600">
+          可选。当用户点击“新建对话”按钮时触发的回调函数。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`currentChatId?: number`</p>
+        <p className="text-sm text-gray-600">
+          可选。当前活动对话的 ID。`NavChatList` 会使用它来高亮显示列表中的相应项。
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
+
+## 数据流
+
+`AppSidebar` 本身不直接获取数据。它通过 Props 接收 `chats` 列表。在我们的应用中，父组件 `SharedLayout` 负责使用 `useGlobalDataCache` Hook 来获取这些数据，然后将其传递给 `AppSidebar`。这种模式将数据获取逻辑与表现层组件分离，使 `AppSidebar` 更加通用和可测试。

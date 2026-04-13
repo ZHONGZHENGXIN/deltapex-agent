@@ -1,0 +1,223 @@
+---
+title: "对话 API"
+description: "管理聊天会话、发送和接收消息、处理流式响应等相关接口"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+# 对话 API
+
+对话 API 是 Build AI Template 的核心，负责处理所有与 AI 聊天相关的功能。包括创建对话、发送消息、获取历史记录以及管理可用的 AI Agent。
+
+## API 端点详情
+
+### 获取可用 Agent 列表
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /chat/agents/active
+    </CardTitle>
+    <CardDescription>获取所有当前可用的 AI Agent 列表，供用户在创建新对话时选择。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`[
+  {
+    "id": 1,
+    "name": "GPT-4.1 Mini",
+    "description": "OpenAI 最新、最快的模型",
+    "avatar": "/avatars/gpt-4.1-mini.png",
+    // ... 其他 agent 信息
+  }
+]`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 创建新对话
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /chat
+    </CardTitle>
+    <CardDescription>创建一个新的对话会话，并将其与一个 Agent 关联。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "title": "我的新对话",
+  "agent_id": 1,
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">响应 (201 Created):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "id": 123,
+  "title": "我的新对话",
+  "user_id": 1,
+  "agent_id": 1,
+  "created_at": "...",
+  "updated_at": "...",
+  "agent": {
+    // ... 关联的 agent 信息
+  }
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 发送消息
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-gray-100 px-2 py-1 rounded">POST</span>
+      /chat/message
+    </CardTitle>
+    <CardDescription>在指定对话中发送一条消息并获取 AI 回复。支持流式 (`stream=true`) 和非流式响应。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "chat_id": 123,
+  "content": "你好，世界！",
+  "role": "user", // 只能是 'user'
+  "lang": "zh"
+}`}
+    </pre>
+    <p className="font-semibold mt-4">Query 参数:</p>
+    <ul>
+      <li>`stream` (boolean, optional): 设置为 `true` 以启用流式响应。默认为 `false`。</li>
+    </ul>
+
+    <Alert className="mt-4">
+      <AlertTitle>💡 响应说明</AlertTitle>
+      <AlertDescription>
+        <ul className="list-disc pl-5 mt-2 space-y-1">
+          <li><b>非流式:</b> 返回一个包含用户消息和 AI 回复消息对象的数组。</li>
+          <li><b>流式:</b> 返回一个 `text/plain` 类型的流。前端需要逐步接收和渲染文本块。流结束后，会包含一个特殊标记 `__TOKEN_USAGE__` 来传递 Token 使用信息。</li>
+        </ul>
+      </AlertDescription>
+    </Alert>
+
+    <p className="font-semibold mt-4">响应 (200 OK - 非流式):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`[
+  { // 用户消息
+    "id": 1, "chat_id": 123, "content": "你好，世界！", "role": "user", ...
+  },
+  { // AI 回复
+    "id": 2, "chat_id": 123, "content": "你好！有什么可以帮助你的吗？", "role": "assistant", "token_usage": { ... }, ...
+  }
+]`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 获取对话列表
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /chat
+    </CardTitle>
+    <CardDescription>获取当前用户的所有对话列表，支持分页。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">Query 参数:</p>
+    <ul>
+      <li>`limit` (integer, optional): 每页数量，默认 20，最大 100。</li>
+      <li>`offset` (integer, optional): 偏移量，默认 0。</li>
+      <li>`include_messages` (boolean, optional): 是否在返回的对话中包含所有消息，默认 `false`。</li>
+    </ul>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`[
+  {
+    "id": 123,
+    "title": "我的新对话",
+    // ... 其他对话信息
+  },
+  // ... 更多对话
+]`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 获取指定对话详情
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-green-100 px-2 py-1 rounded">GET</span>
+      /chat/{"{chat_id}"}
+    </CardTitle>
+    <CardDescription>获取单个对话的详细信息，包括其所有历史消息。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "id": 123,
+  "title": "我的新对话",
+  "messages": [
+    { "role": "user", "content": "你好" },
+    { "role": "assistant", "content": "你好！" }
+  ],
+  "agent": {
+    // ... 关联的 agent 信息
+  }
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 更新对话
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-orange-100 px-2 py-1 rounded">PUT</span>
+      /chat/{"{chat_id}"}
+    </CardTitle>
+    <CardDescription>更新对话的属性，例如修改标题。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold">请求体:</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "title": "更新后的对话标题"
+}`}
+    </pre>
+  </CardContent>
+</Card>
+
+### 删除对话
+
+<Card className="mt-6">
+  <CardHeader>
+    <CardTitle>
+      <span className="font-mono text-sm mr-2 bg-red-100 px-2 py-1 rounded">DELETE</span>
+      /chat/{"{chat_id}"}
+    </CardTitle>
+    <CardDescription>软删除一个对话。数据仍在数据库中，但对用户不可见。</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <p className="font-semibold mt-4">响应 (200 OK):</p>
+    <pre className="mt-2 rounded-lg bg-slate-900 p-4 text-sm text-white">
+      {`{
+  "message": "对话已删除"
+}`}
+    </pre>
+  </CardContent>
+</Card>

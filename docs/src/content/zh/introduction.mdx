@@ -1,0 +1,180 @@
+---
+title: "项目介绍"
+description: "Build AI Template 是一个用于快速构建 AI 应用的开源模板项目"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# Build AI Template
+
+**Build AI Template** 是一个用于快速构建 AI 应用的开源模板项目，基于 **FastAPI** 和 **Next.js** 构建。支持多种 AI 平台集成，提供完整的用户管理、对话系统和管理后台。
+<br/>
+<Alert>
+  <AlertTitle>🚀 快速开始</AlertTitle>
+  <AlertDescription>
+    点击页面右上角的 <strong>Use this template</strong> 按钮创建您的新项目！或者查看我们的<a href="/zh/quick-start" className="text-blue-600 hover:underline">快速开始指南</a>。
+  </AlertDescription>
+</Alert>
+
+## 🎯 项目特色
+
+### 为什么选择 Build AI Template？
+
+- **🚀 开箱即用**：完整的 AI 应用解决方案，无需从零开始
+- **🔧 高度可定制**：模块化设计，轻松扩展和定制功能
+- **🌍 多平台支持**：集成 OpenAI、Dify、FastGPT、Coze 等主流 AI 平台
+- **📱 现代化界面**：基于 Shadcn UI 的美观响应式设计
+- **🔒 企业级安全**：完善的用户认证和权限管理
+- **📊 数据洞察**：详细的使用统计和管理后台
+
+## ⭐ 核心功能
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🤖 智能 Agent 系统
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>✅ 多平台支持：OpenAI、Dify、FastGPT、Coze</li>
+      <li>✅ 可视化 Agent 管理和配置</li>
+      <li>✅ 实时流式响应和打字机效果</li>
+      <li>✅ 模型参数灵活配置</li>
+      <li>✅ 连接状态监控和测试</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      👥 用户管理系统
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>✅ 邮箱验证码登录（无需密码）</li>
+      <li>✅ 多级会员体系（免费/月费/年费）</li>
+      <li>✅ 详细的使用统计和限制</li>
+      <li>✅ 用户和管理员权限分离</li>
+      <li>✅ 首个用户自动获得管理员权限</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      💬 对话系统
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>✅ 实时流式对话体验</li>
+      <li>✅ 完整的对话历史管理</li>
+      <li>✅ 多轮上下文对话支持</li>
+      <li>✅ Markdown 渲染和代码高亮</li>
+      <li>✅ 基于会员等级的使用限制</li>
+    </ul>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2">
+      🛠 管理后台
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="space-y-2 text-sm">
+      <li>✅ 数据统计和可视化面板</li>
+      <li>✅ 用户管理和权限控制</li>
+      <li>✅ 对话记录查看和分析</li>
+      <li>✅ Agent 配置和状态监控</li>
+      <li>✅ 系统性能监控</li>
+    </ul>
+  </CardContent>
+</Card>
+
+</div>
+
+## 🏗️ 技术架构
+
+### 后端技术栈
+
+- **框架**：FastAPI + Python 3.12
+- **数据库**：PostgreSQL + SQLModel + Alembic
+- **缓存**：Redis
+- **AI 集成**：OpenAI API + 多平台 Agent 支持
+- **认证**：JWT + 邮箱验证码
+- **包管理**：uv
+
+### 前端技术栈
+
+- **框架**：Next.js 15.3 + React 19 + TypeScript
+- **UI 组件**：Shadcn UI + Tailwind CSS
+- **国际化**：next-intl
+- **状态管理**：React Hooks
+- **包管理**：pnpm
+
+### 部署技术
+
+- **容器化**：Docker + Docker Compose
+- **反向代理**：Nginx
+- **数据持久化**：PostgreSQL + Redis 数据卷
+
+## 🌟 适用场景
+
+Build AI Template 适合以下场景：
+
+- **AI 聊天应用**：快速构建智能客服、AI 助手等对话应用
+- **企业内部工具**：为团队提供定制化的 AI 工具和服务
+- **SaaS 产品**：构建面向用户的 AI 服务平台
+- **原型验证**：快速验证 AI 产品想法和商业模式
+- **学习项目**：学习现代 Web 开发和 AI 集成最佳实践
+
+## 📈 项目优势
+
+### 开发效率
+
+- **快速启动**：完整的项目模板，减少 80% 的初始开发时间
+- **最佳实践**：遵循行业标准和最佳实践，代码质量有保障
+- **详细文档**：完善的文档和示例，降低学习成本
+
+### 功能完整性
+
+- **全栈解决方案**：前后端完整实现，无需额外开发
+- **生产就绪**：包含用户管理、权限控制、数据统计等企业级功能
+- **可扩展性**：模块化设计，易于扩展和定制
+
+### 技术先进性
+
+- **现代技术栈**：使用最新的 React 19、Next.js 15、Python 3.12
+- **类型安全**：TypeScript + Pydantic 提供完整的类型安全
+- **性能优化**：Redis 缓存、流式响应、响应式设计
+
+## 🚀 立即开始
+
+准备好开始您的 AI 应用开发之旅了吗？
+
+1. **[快速开始](/zh/quick-start)** - 5 分钟内运行您的第一个 AI 应用
+2. **[系统架构](/zh/architecture)** - 了解项目的技术架构和设计理念
+3. **[开发指南](/zh/development)** - 学习如何扩展和定制功能
+4. **[部署指南](/zh/deployment)** - 将应用部署到生产环境
+
+---
+
+## 💡 贡献和支持
+
+Build AI Template 是一个开源项目，我们欢迎社区的贡献和反馈：
+
+- **GitHub 仓库**：[open-v2ai/build-ai-template](https://github.com/open-v2ai/build-ai-template)
+- **问题反馈**：[提交 Issue](https://github.com/open-v2ai/build-ai-template/issues)
+- **功能建议**：[讨论区](https://github.com/open-v2ai/build-ai-template/discussions)
+
+如果这个项目对您有帮助，请考虑给我们一个 ⭐ Star，这将是对我们最大的鼓励！
+

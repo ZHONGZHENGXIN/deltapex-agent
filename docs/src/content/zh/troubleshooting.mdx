@@ -1,0 +1,44 @@
+---
+title: "故障排除"
+description: "常见问题解决方案和故障排除指南"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# 🔧 故障排除
+
+本页面收集了 Build AI Template 使用过程中的常见问题和解决方案。如果您遇到问题，请先查看本指南。
+
+## 🚨 紧急问题快速解决
+
+### 服务无法启动
+<br/>
+<Alert>
+  <AlertTitle>❌ 问题：Docker 容器启动失败</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>症状</strong>：运行 <code>docker compose up -d</code> 后服务无法正常启动</p>
+      <p><strong>快速解决</strong>：</p>
+      <div className="ml-4 space-y-1">
+        <p>1. 检查端口占用：<code>lsof -i :8080</code></p>
+        <p>2. 查看日志：<code>docker compose logs -f</code></p>
+        <p>3. 重新构建：<code>docker compose down && docker compose up -d --build</code></p>
+      </div>
+    </div>
+  </AlertDescription>
+</Alert>
+
+## 📞 获取更多帮助
+
+如果以上解决方案都无法解决您的问题，请通过以下方式获取帮助：
+
+### 💬 社区支持
+
+- **GitHub Issues**：[提交问题报告](https://github.com/open-v2ai/build-ai-template/issues)
+- **讨论区**：[参与社区讨论](https://github.com/open-v2ai/build-ai-template/discussions)
+- **文档反馈**：如果文档有误或不清楚，请提交反馈
+
+---
+
+希望本故障排除指南能帮助您快速解决问题。如果您发现了新的问题或解决方案，欢迎贡献到本文档中！

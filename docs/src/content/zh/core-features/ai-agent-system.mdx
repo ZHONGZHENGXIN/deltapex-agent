@@ -1,0 +1,87 @@
+---
+title: "AI Agent 系统"
+description: "深入了解支持多种大语言模型和第三方 AI 平台的 Agent 抽象层"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+# 🤖 AI Agent 系统
+
+Build AI Template 的核心优势之一是其灵活且可扩展的 AI Agent 系统。该系统通过一个统一的抽象层，实现了对多种底层 AI 服务（包括通用的大语言模型和第三方 AI 应用平台）的无缝接入和管理。
+
+## 核心设计理念
+
+- **统一接口**: 无论后端是 OpenAI 的 GPT-4、Dify 平台上的一个应用，还是未来可能接入的任何其他 AI 服务，它们都被封装成一个统一的 `Agent` 实体。这使得上层业务逻辑（如对话管理）无需关心底层的具体实现。
+- **配置驱动**: 每个 `Agent` 的行为都是通过数据库中的配置来驱动的。管理员可以在后台轻松创建和管理不同的 Agent，调整它们的 API 地址、密钥、模型参数等，而无需修改任何代码。
+- **可扩展性**: 系统设计了 `AgentSource` 枚举，使得添加对新 AI 服务平台的支持变得简单。开发者只需为新的源实现一个符合统一接口规范的处理器，即可将其集成到系统中。
+
+## `Agent` 数据模型
+
+`Agent` 模型是整个系统的基石，定义了一个 AI 助手所需的所有核心信息。
+
+**文件位置:** `api/app/models/agent.py`
+
+<Card>
+  <CardHeader>
+    <CardTitle>Agent 模型字段</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <ul className="list-disc pl-5 space-y-2">
+      <li>`name`: (string) Agent 的显示名称，例如 "GPT-4.1 Mini"。</li>
+      <li>`source`: (Enum) Agent 的来源类型。这是一个关键字段，决定了系统将使用哪个处理器来与该 Agent 通信。当前支持 `llm`, `dify` 等。</li>
+      <li>`api_url`: (string) AI 服务的 API 端点地址。</li>
+      <li>`api_key`: (string) 用于认证的 API 密钥。</li>
+      <li>`model_conf`: (JSON) 一个灵活的 JSON 字段，用于存储特定于该 Agent 的模型配置，例如 `temperature`, `max_tokens` 等。</li>
+    </ul>
+  </CardContent>
+</Card>
+
+## Agent 处理器
+
+根据 `Agent` 模型中的 `source` 字段，系统会在运行时动态选择合适的处理器来处理与 AI 的交互。
+
+### 1. 通用 LLM 处理器 (`llm`)
+
+这是最基础的处理器，设计用于与任何兼容 OpenAI API 格式的大语言模型进行交互。
+
+**文件位置:** `api/app/agents/llm.py`
+
+- **功能**:
+    - `create_llm_response`: 处理非流式的聊天请求。
+    - `create_llm_response_stream`: 处理流式的聊天请求。
+    - `test_agent_connection`: 测试与 LLM 服务的网络连接和认证是否正常。
+- **配置**:
+    - `api_url` 应指向模型的聊天完成接口，例如 `https://api.openai.com/v1/chat/completions`。
+    - `model_conf` 中可以包含 `model`, `temperature`, `max_tokens` 等所有 OpenAI 支持的参数。
+
+### 2. Dify 平台处理器 (`dify`)
+
+这是一个专门为 [Dify.ai](https://dify.ai/) 平台设计的处理器。Dify 是一个强大的 LLM 应用开发平台，允许用户通过简单的配置构建复杂的 AI 应用（如 RAG、Agent 等）。
+
+**文件位置:** `api/app/agents/dify.py`
+
+- **功能**:
+    - 它实现了与 `llm.py` 中同名的函数，但其内部逻辑是调用 Dify 的 API。
+    - 能够处理 Dify 的 `conversation_id`，以支持有状态的多轮对话。
+    - 能够从 Dify 的响应中解析出 Token 使用情况。
+- **配置**:
+    - `api_url` 应指向 Dify 应用的聊天 API 地址。
+    - `api_key` 是在 Dify 应用中生成的 API 密钥。
+
+<Alert className="mt-6">
+  <AlertTitle>💡 统一的调用入口</AlertTitle>
+  <AlertDescription>
+    在业务逻辑层（例如 `api/app/routers/v1/chat.py`），系统并不直接调用 `llm.py` 或 `dify.py`。相反，它调用的是 `create_agent_response` 和 `create_agent_response_stream` 这两个高级函数。这两个函数会根据传入的 `Agent` 对象的 `source` 属性，在内部动态地将请求分派给正确的处理器。
+  </AlertDescription>
+</Alert>
+
+## 如何添加一个新的 Agent 源？
+
+假设您想添加对一个新的 AI 平台 "MagicAI" 的支持：
+
+1. **更新枚举**: 在 `api/app/models/agent.py` 的 `AgentSource` 枚举中添加一个新的成员 `MAGIC_AI = "magic_ai"`。
+2. **创建处理器**: 创建一个新的文件 `api/app/agents/magic_ai.py`。
+3. **实现接口**: 在新文件中，实现 `create_magic_ai_response`, `create_magic_ai_response_stream` 和 `test_magic_ai_connection` 这三个核心函数，确保它们的输入和输出与现有的处理器（如 `llm.py`）保持一致。
+4. **更新分派逻辑**: 在 `api/app/routers/v1/chat.py` 中的 `create_agent_response` 等函数中，添加一个新的条件分支，当 `agent.source` 是 `AgentSource.MAGIC_AI` 时，调用您刚刚创建的 `magic_ai.py` 中的函数。
+5. **完成**: 现在，管理员就可以在后台创建一个 `source` 为 `magic_ai` 的新 Agent，整个系统将能够无缝地与其交互。

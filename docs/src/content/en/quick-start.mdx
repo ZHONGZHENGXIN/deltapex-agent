@@ -1,0 +1,537 @@
+---
+title: "Quick Start"
+description: "Run your first AI application in 5 minutes"
+---
+
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+# ⚡ Quick Start
+
+This guide will help you run Build AI Template in 5 minutes and experience the complete AI application functionality.
+
+<br/>
+<Alert>
+  <AlertTitle>⚠️ System Requirements</AlertTitle>
+  <AlertDescription>
+    <ul className="mt-2 space-y-1">
+      <li>• CPU: 2 cores or more</li>
+      <li>• Memory: 4 GB or more</li>
+      <li>• Storage: 20 GB available space</li>
+      <li>• OS: Linux, macOS, or Windows</li>
+    </ul>
+  </AlertDescription>
+</Alert>
+
+## 🚀 Method 1: Docker One-Click Deployment (Recommended)
+
+This is the simplest and fastest deployment method, suitable for a quick experience and for production use.
+
+### Prerequisites
+
+- Docker >= 26.0
+- Docker Compose >= 2.25
+
+### Deployment Steps
+
+1. **Clone the Project**
+
+  ```bash
+  git clone https://github.com/open-v2ai/build-ai-template.git
+  cd build-ai-template/deploy/
+  ```
+
+2. **Configure Environment Variables**
+
+  ```bash
+  # Copy the environment variable template
+  cp .env.example .env
+
+  # Edit the environment variable file
+  vim .env  # or use your favorite editor
+  ```
+
+  **Required Configuration Items**:
+
+  ```bash
+  # AI Configuration (Required)
+  AGENT_API_KEY=sk-proj-***
+  AGENT_BASE_URL=https://api.openai.ai/v1/chat/completions
+  AGENT_MODEL_NAME=gpt-4.1-mini
+
+  # Email Configuration (Required for login verification codes)
+  # Method 1: Use SMTP
+  MAIL_SEND_METHOD=SMTP
+  MAIL_USERNAME=your-email@gmail.com
+  MAIL_PASSWORD=your-app-password
+  MAIL_FROM=your-email@gmail.com
+  MAIL_SERVER=smtp.gmail.com
+  MAIL_PORT=587
+
+  # Method 2: Use Resend
+  # MAIL_SEND_METHOD=RESEND
+  # RESEND_API_KEY=re_your-resend-api-key
+  # RESEND_MAIL_FROM=your-email@your-domain.com
+
+  # Stripe Configuration (Required for payment module)
+  STRIPE_PUBLIC_KEY=pk-test-***
+  STRIPE_PRIVATE_KEY=sk-test-***
+  STRIPE_WEBHOOK_SECRET=whsec-***
+
+  # Security Configuration (Recommended to change)
+  AUTH_SECRET_KEY=your-super-secret-key-here
+  ```
+  <br/>
+  <Alert>
+    <AlertTitle>📧 Email Configuration Guide</AlertTitle>
+    <AlertDescription>
+      <div className="mt-2 space-y-2">
+        <p>You can choose to send emails via <strong>SMTP</strong> or <strong>Resend</strong>.</p>
+        <p><strong>SMTP (for Gmail users)</strong>: You need to enable two-step verification and generate an app-specific password.</p>
+        <p><strong>Resend users</strong>: You need to configure an API Key and use a sender email from a domain verified in Resend.</p>
+        <p><strong>For testing environment</strong>: You can use <code>AUTH_IS_DEBUG=True</code> and <code>AUTH_DEBUG_CODE=888888</code> to bypass email verification.</p>
+      </div>
+    </AlertDescription>
+  </Alert>
+
+3. **Build Images**
+
+  ```bash
+  make build-all
+  ```
+
+4. **Start the Services**
+
+  ```bash
+  # Start all services with a single command
+  docker compose up -d
+
+  # Check the status of the services
+  docker compose ps
+
+  # View logs (optional)
+  docker compose logs -f
+  ```
+
+5. **Access the Application**
+
+- **User Interface**: http://localhost:8081
+- **Admin Panel**: http://localhost:8081/admin
+- **API Documentation**: http://localhost:8081/v1/api/docs
+- **Project Documentation**: http://localhost:8082
+
+<br/>
+<Alert>
+  <AlertTitle>🎉 Automatic Admin Setup</AlertTitle>
+  <AlertDescription>
+    The first user to register via email verification will automatically be granted administrator privileges!
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🛠️ Method 2: Running in a Development Environment
+
+This is suitable for developers who want to develop and customize features.
+
+**Prerequisites**
+
+- **Backend**: Python >= 3.12, uv >= 0.6
+- **Frontend**: Node.js >= 18.19, pnpm >= 10.11
+
+1. **Prepare the Database**
+
+```bash
+# Clone the project
+git clone https://github.com/open-v2ai/build-ai-template.git
+cd build-ai-template
+
+# Start PostgreSQL (using Docker)
+bash api/scripts/run_postgres.sh
+
+# Start Redis (using Docker)
+bash api/scripts/run_redis.sh
+```
+
+2. **Configure and Run the Backend**
+
+```bash
+cd api/
+
+# Install dependencies
+uv sync
+
+# Activate the virtual environment
+source venv/bin/activate  # For Linux/macOS
+# or venv\Scripts\activate  # For Windows
+
+# Configure environment variables
+cp .env.example .env
+# Edit the .env file
+vim .env
+
+# AI Configuration (Required)
+AGENT_API_KEY=sk-proj-***
+AGENT_BASE_URL=https://api.openai.ai/v1/chat/completions
+AGENT_MODEL_NAME=gpt-4.1-mini
+
+# Email Configuration (Required for login verification codes)
+# Method 1: Use SMTP
+MAIL_SEND_METHOD=SMTP
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_FROM=your-email@gmail.com
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+
+# Method 2: Use Resend
+# MAIL_SEND_METHOD=RESEND
+# RESEND_API_KEY=re_your-resend-api-key
+# RESEND_MAIL_FROM=your-email@your-domain.com
+
+# Stripe Configuration (Required for payment module)
+STRIPE_PUBLIC_KEY=pk-test-***
+STRIPE_PRIVATE_KEY=sk-test-***
+STRIPE_WEBHOOK_SECRET=whsec-***
+
+# Run database migrations (optional)
+alembic upgrade head
+
+# Start the development server (port 8000)
+python -m app.main
+```
+
+3. **Configure the Payment Module**
+
+```bash
+cd api/
+source venv/bin/activate
+
+# Login to Stripe
+stripe login
+stripe listen --forward-to localhost:8000/api/v1/orders/stripe/webhook
+# Copy the generated webhook secret to the .env file
+STRIPE_WEBHOOK_SECRET=whsec_cexxx
+```
+
+4. **Configure and Run the Application Frontend**
+
+```bash
+# Open a new terminal window
+cd web/
+
+# Install dependencies
+pnpm install
+
+# Configure environment variables
+cp .env.example .env
+vim .env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+Then, start the development server:
+
+```bash
+# Start the development server (port 3000)
+pnpm dev
+```
+
+5. **Configure and Run the Documentation Frontend**
+
+```bash
+# Open a new terminal window
+cd docs/
+
+# Install dependencies
+pnpm install
+
+# Start the development server (port 4000)
+pnpm dev
+```
+
+6. **Access the Application**
+
+- **User Interface**: http://localhost:3000
+- **Admin Panel**: http://localhost:3000/admin
+- **API Documentation**: http://localhost:3000/v1/api/docs
+- **Project Documentation**: http://localhost:4000
+
+<br/>
+<Alert>
+  <AlertTitle>🎉 Automatic Admin Setup</AlertTitle>
+  <AlertDescription>
+    The first user to register via email verification will automatically be granted administrator privileges!
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🔧 Detailed Environment Variable Configuration
+
+### Backend Environment Variables (api/.env)
+
+<br/>
+<Alert>
+  <AlertTitle>💡 Tip</AlertTitle>
+  <AlertDescription>
+    In a development environment, you can directly copy and modify the <code>api/.env.example</code> file. For production, please refer to <code>deploy/.env.example</code>.
+  </AlertDescription>
+</Alert>
+
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 my-6">
+
+<Card>
+  <CardHeader>
+    <CardTitle>🤖 AI & Agent</CardTitle>
+    <CardDescription>Configuration for Large Models and Agent services</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>AGENT_API_KEY</code> - <b>(Required)</b> API key for OpenAI or compatible APIs</div>
+      <div><code>AGENT_BASE_URL</code> - API endpoint URL</div>
+      <div><code>AGENT_MODEL_NAME</code> - Default model name to use</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>📧 Email Service</CardTitle>
+    <CardDescription>Used for sending login/registration verification codes</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>MAIL_SEND_METHOD</code> - Email sending method (<code>SMTP</code> or <code>RESEND</code>)</div>
+      <hr className="my-2" />
+      <div><strong>SMTP Configuration:</strong></div>
+      <div><code>MAIL_USERNAME</code> - SMTP email username</div>
+      <div><code>MAIL_PASSWORD</code> - SMTP email password or app-specific password</div>
+      <div><code>MAIL_FROM</code> - Sender's email address</div>
+      <div><code>MAIL_SERVER</code> - SMTP server address</div>
+      <div><code>MAIL_PORT</code> - SMTP server port</div>
+      <hr className="my-2" />
+      <div><strong>Resend Configuration:</strong></div>
+      <div><code>RESEND_API_KEY</code> - Resend API Key</div>
+      <div><code>RESEND_MAIL_FROM</code> - Resend sender's email</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🗄️ Database</CardTitle>
+    <CardDescription>Connection settings for PostgreSQL and Redis</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><strong>PostgreSQL:</strong></div>
+      <div><code>POSTGRES_HOST</code> - Database host</div>
+      <div><code>POSTGRES_PORT</code> - Database port</div>
+      <div><code>POSTGRES_USER</code> - Database user</div>
+      <div><code>POSTGRES_PASSWORD</code> - Database password</div>
+      <div><code>POSTGRES_DB</code> - Database name</div>
+      <hr className="my-2" />
+      <div><strong>Redis:</strong></div>
+      <div><code>REDIS_HOST</code> - Redis host</div>
+      <div><code>REDIS_PORT</code> - Redis port</div>
+      <div><code>REDIS_USER</code> - Redis user</div>
+      <div><code>REDIS_PASSWORD</code> - Redis password</div>
+      <div><code>REDIS_DB</code> - Redis database</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>🔒 Authentication & Security</CardTitle>
+    <CardDescription>JWT token and debug mode settings</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>AUTH_SECRET_KEY</code> - <b>(Required)</b> Secret key for signing JWTs, be sure to change it</div>
+      <div><code>AUTH_ALGORITHM</code> - Algorithm for signing JWTs</div>
+      <div><code>AUTH_ACCESS_TOKEN_EXPIRE_MINUTES</code> - Access Token expiration time in minutes</div>
+      <div><code>AUTH_REFRESH_TOKEN_EXPIRE_DAYS</code> - Refresh Token expiration time in days</div>
+      <div><code>AUTH_IS_DEBUG</code> - Whether to enable debug mode for authentication</div>
+      <div><code>AUTH_DEBUG_CODE</code> - Universal verification code for debug mode</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>💳 Payment & Membership</CardTitle>
+    <CardDescription>Configuration for Stripe payments and membership tiers</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>STRIPE_PRIVATE_KEY</code> - Stripe private key</div>
+      <div><code>STRIPE_PUBLIC_KEY</code> - Stripe public key</div>
+      <div><code>STRIPE_WEBHOOK_SECRET</code> - Stripe Webhook secret</div>
+      <hr className="my-2" />
+      <div><strong>Free Tier</strong></div>
+      <div><code>MEMBERSHIP_FREE_NAME</code> - Name</div>
+      <div><code>MEMBERSHIP_FREE_DAILY_MESSAGE_LIMIT</code> - Daily message limit</div>
+      <div><code>MEMBERSHIP_FREE_DAILY_TOKEN_LIMIT</code> - Daily token limit</div>
+      <div><code>MEMBERSHIP_FREE_CONVERSATION_TURN_LIMIT</code> - Conversation turn limit</div>
+      <div><code>MEMBERSHIP_FREE_PRICE</code> - Price</div>
+      <div><code>MEMBERSHIP_FREE_CURRENCY</code> - Currency</div>
+      <div><code>MEMBERSHIP_FREE_DURATION_DAYS</code> - Duration (days)</div>
+      <div><code>MEMBERSHIP_FREE_DESCRIPTION</code> - Description</div>
+      <hr className="my-2" />
+      <div><strong>Monthly Tier</strong></div>
+      <div><code>MEMBERSHIP_MONTHLY_NAME</code> - Name</div>
+      <div><code>MEMBERSHIP_MONTHLY_DAILY_MESSAGE_LIMIT</code> - Daily message limit</div>
+      <div><code>MEMBERSHIP_MONTHLY_DAILY_TOKEN_LIMIT</code> - Daily token limit</div>
+      <div><code>MEMBERSHIP_MONTHLY_CONVERSATION_TURN_LIMIT</code> - Conversation turn limit</div>
+      <div><code>MEMBERSHIP_MONTHLY_PRICE</code> - Price</div>
+      <div><code>MEMBERSHIP_MONTHLY_CURRENCY</code> - Currency</div>
+      <div><code>MEMBERSHIP_MONTHLY_DURATION_DAYS</code> - Duration (days)</div>
+      <div><code>MEMBERSHIP_MONTHLY_DESCRIPTION</code> - Description</div>
+      <hr className="my-2" />
+      <div><strong>Yearly Tier</strong></div>
+      <div><code>MEMBERSHIP_YEARLY_NAME</code> - Name</div>
+      <div><code>MEMBERSHIP_YEARLY_DAILY_MESSAGE_LIMIT</code> - Daily message limit</div>
+      <div><code>MEMBERSHIP_YEARLY_DAILY_TOKEN_LIMIT</code> - Daily token limit</div>
+      <div><code>MEMBERSHIP_YEARLY_CONVERSATION_TURN_LIMIT</code> - Conversation turn limit</div>
+      <div><code>MEMBERSHIP_YEARLY_PRICE</code> - Price</div>
+      <div><code>MEMBERSHIP_YEARLY_CURRENCY</code> - Currency</div>
+      <div><code>MEMBERSHIP_YEARLY_DURATION_DAYS</code> - Duration (days)</div>
+      <div><code>MEMBERSHIP_YEARLY_DESCRIPTION</code> - Description</div>
+    </div>
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>⚙️ Application Service</CardTitle>
+    <CardDescription>Basic configuration for the API service itself</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>ENV</code> - Running environment (dev/test/prod)</div>
+      <hr className="my-2" />
+      <div><strong>API Configuration:</strong></div>
+      <div><code>API_HOST</code> - Host</div>
+      <div><code>API_PORT</code> - Port</div>
+      <div><code>API_NAME</code> - Name</div>
+      <div><code>API_VERSION</code> - Version</div>
+      <div><code>API_RELOAD</code> - Whether to auto-reload</div>
+    </div>
+  </CardContent>
+</Card>
+
+</div>
+
+### Frontend Environment Variables (web/.env)
+
+<Card className="my-6">
+  <CardHeader>
+    <CardTitle>🖥️ Frontend Configuration</CardTitle>
+    <CardDescription>Basic environment variables required for frontend development.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-2 text-sm">
+      <div><code>NEXT_PUBLIC_API_URL</code> - The access address for the backend API, used for frontend data requests.</div>
+      <div><code>NEXT_PUBLIC_APP_URL</code> - (Optional) The hostname URL of the current frontend application.</div>
+      <div><code>NEXT_PUBLIC_DOCS_URL</code> - (Optional) The access address for the documentation site.</div>
+    </div>
+  </CardContent>
+</Card>
+
+
+---
+
+## ✅ Verify Deployment
+
+### 1. Check Service Status
+
+```bash
+# Docker Deployment
+docker compose ps
+
+# Development Environment
+curl http://localhost:8000/health  # Backend health check
+curl http://localhost:3000         # Frontend access
+```
+
+### 2. Test Core Functionality
+
+1. **User Registration and Login**
+   - Visit the application's home page
+   - Click login and enter your email
+   - Check for the email verification code (or use the debug code 888888)
+
+2. **AI Chat Test**
+   - Create a new chat after logging in
+   - Send a test message
+   - Verify the AI's response and streaming display
+
+3. **Admin Panel Access**
+   - Visit the `/admin` path
+   - Check user management, chat statistics, and other features
+
+---
+
+## 🚨 Common Issues
+
+<br/>
+<Alert>
+  <AlertTitle>❌ Service Fails to Start</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Check for port conflicts</strong>: For Docker deployment, ensure ports 8081 and 8082 are not in use. For the development environment, ensure ports 8000, 3000, and 4000 are not occupied.</p>
+      <p><strong>Check Docker</strong>: Make sure the Docker service is running.</p>
+      <p><strong>View logs</strong>: Use <code>docker compose logs -f</code> to check for error messages.</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ AGENT Fails to Respond</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Check API Key</strong>: Ensure the AGENT API Key is valid and has a sufficient balance.</p>
+      <p><strong>Check network</strong>: Ensure the server can access the AGENT API.</p>
+      <p><strong>Check model</strong>: Confirm the model name is correct (e.g., <code>gpt-4.1-mini</code>).</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ Email Fails to Send</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Cloud Provider Blocking</strong>: Most cloud providers may block SMTP services. You can use <a href="https://resend.com/" target="_blank" rel="noopener noreferrer">Resend</a> as an alternative.</p>
+      <p><strong>Testing Environment</strong>: You can set <code>AUTH_IS_DEBUG=True</code> and <code>AUTH_DEBUG_CODE=888888</code> to bypass email verification for direct login, which is convenient for local development and testing.</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+<br/>
+<Alert>
+  <AlertTitle>❌ Payment module configuration failed</AlertTitle>
+  <AlertDescription>
+    <div className="mt-2 space-y-2">
+      <p><strong>Check Stripe</strong>: Ensure the Stripe service is running.</p>
+      <p><strong>Check webhook secret</strong>: Make sure the webhook secret is correct.</p>
+      <p><strong>Check Stripe account</strong>: Verify that the Stripe account is set up correctly.</p>
+    </div>
+  </AlertDescription>
+</Alert>
+
+---
+
+## 🎯 Next Steps
+
+Congratulations! You have successfully deployed the Build AI Template. Next, you can:
+
+1. **[Understand the System Architecture](/en/architecture)** - Get an in-depth understanding of the project's technical architecture
+2. **[User Guide](/en/user-guide)** - Learn how to use the various features
+3. **[Admin Guide](/en/admin-guide)** - Master the use of the admin panel
+4. **[Development Guide](/en/development)** - Start customizing and extending functionalities
+5. **[Deployment Guide](/en/deployment)** - Learn best practices for production deployment
+
+If you encounter any issues, please check our **[Troubleshooting Guide](/en/troubleshooting)** or submit an issue on GitHub.

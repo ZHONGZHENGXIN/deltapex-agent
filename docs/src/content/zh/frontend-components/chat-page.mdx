@@ -1,0 +1,83 @@
+---
+title: "聊天页面 (ChatContentPage)"
+description: "应用的核心交互界面，用于显示消息和处理用户输入"
+---
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+
+# 聊天页面 (ChatContentPage)
+
+`ChatContentPage` 是 Build AI Template 中用户交互最核心的组件。它负责渲染整个聊天界面，包括历史消息、用户输入框以及所有相关的 UI 元素和业务逻辑。
+
+**文件位置:** `web/components/chat-content-page.tsx`
+
+## 核心功能
+
+- **消息渲染**:
+    - 能够清晰地区分用户 (`user`) 和 AI 助手 (`assistant`) 的消息。
+    - 自动格式化消息时间戳。
+    - 对 AI 的回复使用 `AIStreamText` 组件，实现打字机效果的流式显示。
+    - 鼠标悬浮在消息上时，会显示复制、查看原文、重新生成等操作按钮。
+- **用户输入**:
+    - 提供一个可自动调整高度的文本输入框。
+    - 支持按 `Enter` 键发送消息，`Shift + Enter` 换行。
+    - 在 AI 回复期间，发送按钮会变为“停止生成”按钮。
+- **状态管理**:
+    - 管理当前对话的消息列表、输入框内容、加载状态 (`isLoading`) 和错误信息。
+    - 与全局状态管理 Hooks (`useGlobalChatState`, `useGlobalDataCache`) 深度集成。
+- **业务逻辑集成**:
+    - **全局对话锁**: 通过 `useGlobalChatState` 检查并执行全局对话锁，确保同一时间只有一个对话在进行。
+    - **会员限制**: 检查用户的会员状态 (`useMembershipStatus`)，并根据对话轮次限制 (`conversation_turn_limit`) 禁用输入框。
+    - **错误处理**: 能够捕获 API 请求的错误，并在界面上显示友好的错误提示和重试按钮。
+- **自动滚动**: 当新消息出现时，页面会自动滚动到底部，以确保最新消息可见。如果用户手动向上滚动，则自动滚动会暂停。
+
+## 核心 Hooks 集成
+
+`ChatContentPage` 的强大功能很大程度上依赖于自定义 Hooks 提供的支持：
+
+- **`useGlobalChatState`**: 用于管理全局对话锁。确保用户不能同时在多个标签页或设备上与 AI 对话，防止状态冲突和资源滥用。
+- **`useGlobalDataCache`**: 用于与前端的全局数据缓存交互。当新消息发送或接收后，组件会调用此 Hook 中的函数 (`addMessageToChat`, `updateChatInCache`) 来更新缓存，从而实现所有相关组件（如侧边栏的对话列表）的实时更新，而无需重新请求网络。
+- **`useMembershipStatus`**: 用于获取当前用户的会员状态和权益限制，如最大对话轮次。
+
+## Props
+
+<Card>
+  <CardHeader>
+    <CardTitle>ChatContentPageProps</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="space-y-4">
+      <div>
+        <p className="font-semibold">`chat: Chat`</p>
+        <p className="text-sm text-gray-600">
+          必需。一个 `Chat` 对象，包含了当前对话的所有信息，包括其历史消息 (`messages`) 和关联的 `agent`。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`isNewChat?: boolean`</p>
+        <p className="text-sm text-gray-600">
+          可选。一个布尔值，指示当前是否是一个全新的、尚未保存的对话。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`onStartNewChat?: () => void`</p>
+        <p className="text-sm text-gray-600">
+          可选。当对话达到轮次上限时，用户点击“开始新对话”按钮后触发的回调。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`initialMessage?: string`</p>
+        <p className="text-sm text-gray-600">
+          可选。用于在新对话场景下自动发送的第一条消息。
+        </p>
+      </div>
+      <div>
+        <p className="font-semibold">`onInitialMessageSent?: () => void`</p>
+        <p className="text-sm text-gray-600">
+          可选。当初始消息成功发送后触发的回调。
+        </p>
+      </div>
+    </div>
+  </CardContent>
+</Card>
