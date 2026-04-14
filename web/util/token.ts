@@ -1,8 +1,10 @@
 import { getSupabaseBrowserClient } from "@/util/supabase";
+import { getPublicEnv } from "@/util/runtime-env";
 
 export function getApiUrl() {
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
+  const publicApiUrl = getPublicEnv("NEXT_PUBLIC_API_URL");
+  if (publicApiUrl) {
+    return publicApiUrl;
   }
   if (typeof window !== "undefined") {
     return window.location.origin;

@@ -14,6 +14,7 @@ import ThemeToggleButton from "@/components/theme-toggle-button";
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { fetcher } from "@/util/fetcher";
+import { getPublicEnv } from "@/util/runtime-env";
 import { getSupabaseBrowserClient } from "@/util/supabase";
 
 type AuthMode = "password-login" | "register" | "reset-request";
@@ -165,10 +166,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const supabase = getSupabaseBrowserClient();
+      const appUrl = getPublicEnv("NEXT_PUBLIC_APP_URL");
       const emailRedirectTo =
-        process.env.NEXT_PUBLIC_APP_URL
-          ? `${process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "")}/${locale}/login`
-          : `${window.location.origin}/${locale}/login`;
+        appUrl ? `${appUrl.replace(/\/$/, "")}/${locale}/login` : `${window.location.origin}/${locale}/login`;
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -207,7 +207,7 @@ export default function LoginPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const redirectTo =
-        process.env.NEXT_PUBLIC_SUPABASE_RESET_REDIRECT_URL ||
+        getPublicEnv("NEXT_PUBLIC_SUPABASE_RESET_REDIRECT_URL") ||
         `${window.location.origin}/${locale}/reset-password`;
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {

@@ -11,6 +11,14 @@ import { GlobalChatStateProvider } from '@/hooks/use-global-chat-state';
 import { GlobalDataCacheProvider } from '@/hooks/use-global-data-cache';
 import { GlobalUserDataProvider } from '@/hooks/use-global-user-data';
 
+const publicEnv = {
+  NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_RESET_REDIRECT_URL: process.env.NEXT_PUBLIC_SUPABASE_RESET_REDIRECT_URL,
+};
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const messages = (await import(`@/app/messages/${locale}.json`)).default;
@@ -39,6 +47,11 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className="font-sans antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__APP_ENV__ = ${JSON.stringify(publicEnv)};`,
+          }}
+        />
         <NextThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <ThemeProvider />
           <NextIntlClientProvider locale={locale}>
