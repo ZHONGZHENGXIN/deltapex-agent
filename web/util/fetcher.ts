@@ -1,6 +1,8 @@
 import { getValidAccessToken, getApiUrl } from "@/util/token";
 
-const API_URL_V1 = `${getApiUrl()}/api/v1`;
+function getApiUrlV1() {
+    return `${getApiUrl()}/api/v1`;
+}
 
 /**
  * 获取当前用户的语言设置
@@ -132,8 +134,7 @@ export async function fetcher<T>(
         }
     }
 
-
-    const fullUrl = `${API_URL_V1}${url}`;
+    const fullUrl = `${getApiUrlV1()}${url}`;
     
     const res = await nativeFetch(fullUrl, {
         ...options,

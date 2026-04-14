@@ -1,10 +1,31 @@
 import { getSupabaseBrowserClient } from "@/util/supabase";
 import { getPublicEnv } from "@/util/runtime-env";
 
+const ABSOLUTE_URL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:\/\//;
+
+function normalizeApiUrl(value: string): string {
+  let normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return normalizedValue;
+  }
+
+  if (normalizedValue.startsWith("//")) {
+    normalizedValue = `https:${normalizedValue}`;
+  } else if (!ABSOLUTE_URL_PATTERN.test(normalizedValue)) {
+    normalizedValue = `https://${normalizedValue}`;
+  }
+
+  normalizedValue = normalizedValue.replace(/\/+$/, "");
+  normalizedValue = normalizedValue.replace(/\/api\/v1$/i, "");
+
+  return normalizedValue;
+}
+
 export function getApiUrl() {
   const publicApiUrl = getPublicEnv("NEXT_PUBLIC_API_URL");
   if (publicApiUrl) {
-    return publicApiUrl;
+    return normalizeApiUrl(publicApiUrl);
   }
   if (typeof window !== "undefined") {
     return window.location.origin;
