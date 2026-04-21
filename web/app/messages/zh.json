@@ -87,6 +87,58 @@
       "loading": "加载中..."
     }
   },
+  "marketing": {
+    "login": {
+      "eyebrow": "Deltapex Trading",
+      "heroTitle": "为每一场关键交易时段构建专业级市场 intelligence。",
+      "heroDescription": "把量化框架、订单流语境与高质量个股研报整合进同一套执行工作区，让研究与下单决策保持同频。",
+      "formEyebrow": "安全访问",
+      "loginDescription": "登录你的 Deltapex 工作台，继续当前研究流程。",
+      "registerDescription": "创建账户后即可启用 Deltapex 的交易研究与执行体系。",
+      "resetDescription": "输入邮箱，我们会向你发送安全的重置密码链接。",
+      "resetSent": "重置密码邮件已发送，请检查邮箱。",
+      "registerNeedsConfirm": "注册成功，请先完成邮箱确认后再登录。",
+      "registerComplete": "注册成功，正在进入系统。",
+      "resetLinkLabel": "忘记密码？",
+      "resetBack": "返回登录",
+      "aboutCta": "了解 Deltapex",
+      "footerNote": "为数据驱动型交易团队而构建",
+      "pills": {
+        "research": "深度研究",
+        "orderFlow": "订单流",
+        "execution": "执行体系"
+      }
+    },
+    "about": {
+      "eyebrow": "关于 Deltapex",
+      "title": "面向证据驱动交易者的研究系统。",
+      "description": "Deltapex 将订单流解析、量化结构、深度个股研报与执行纪律整合为一套统一工作流，服务现代主观与系统化交易团队。",
+      "cards": {
+        "orderFlow": {
+          "title": "订单流解析",
+          "description": "围绕成交、流动性与仓位转移建立可复用的观察框架，在真实时段中快速识别行为变化。"
+        },
+        "quantModels": {
+          "title": "量化模型",
+          "description": "把原始市场数据转换为可重复的偏向判断、环境过滤和更稳定的决策支持。"
+        },
+        "deepResearch": {
+          "title": "深度研报",
+          "description": "围绕催化、结构与风险建立高信号个股研究，让研究结果可以直接进入执行层。"
+        },
+        "executionFramework": {
+          "title": "执行框架",
+          "description": "把研究结论、交易剧本与会员流程收敛到同一环境，在资金出手前先约束纪律。"
+        }
+      },
+      "stats": {
+        "models": "策略模型",
+        "reports": "研报数量",
+        "sessions": "跟踪时段",
+        "coverage": "执行节奏"
+      }
+    }
+  },
   "pages": {
     "home": {
       "helloWorld": "Deltapex Trading",

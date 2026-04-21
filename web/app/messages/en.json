@@ -87,6 +87,58 @@
       "loading": "Loading..."
     }
   },
+  "marketing": {
+    "login": {
+      "eyebrow": "Deltapex Trading",
+      "heroTitle": "Professional market intelligence for every decisive session.",
+      "heroDescription": "Quant workflows, order flow context, and high-conviction stock research aligned inside one execution-grade workspace.",
+      "formEyebrow": "Secure access",
+      "loginDescription": "Sign in to your Deltapex desk and resume your research workflow.",
+      "registerDescription": "Create your account to unlock the Deltapex trading research stack.",
+      "resetDescription": "Enter your email and we will send you a secure password reset link.",
+      "resetSent": "Password reset email sent. Check your inbox.",
+      "registerNeedsConfirm": "Registration succeeded. Confirm your email before signing in.",
+      "registerComplete": "Registration succeeded. Redirecting now.",
+      "resetLinkLabel": "Forgot password?",
+      "resetBack": "Back to login",
+      "aboutCta": "Explore Deltapex",
+      "footerNote": "Built for data-led trading teams",
+      "pills": {
+        "research": "Deep research",
+        "orderFlow": "Order flow",
+        "execution": "Execution"
+      }
+    },
+    "about": {
+      "eyebrow": "About Deltapex",
+      "title": "Research systems designed for traders who move on evidence.",
+      "description": "Deltapex combines order flow reading, quant structure, stock research, and execution discipline into a single operating layer for modern discretionary and systematic desks.",
+      "cards": {
+        "orderFlow": {
+          "title": "Order Flow Analysis",
+          "description": "Read auction behavior, liquidity response, and positioning shifts with a framework tuned for real session context."
+        },
+        "quantModels": {
+          "title": "Quant Models",
+          "description": "Systematic models turn raw market data into repeatable bias, regime filters, and higher-quality decision support."
+        },
+        "deepResearch": {
+          "title": "Deep Equity Research",
+          "description": "Focused stock reports connect catalysts, structure, and risk so research can move directly into action."
+        },
+        "executionFramework": {
+          "title": "Execution Framework",
+          "description": "Bring research, playbooks, and member workflows into one environment built to tighten discipline before capital is committed."
+        }
+      },
+      "stats": {
+        "models": "Strategy models",
+        "reports": "Research reports",
+        "sessions": "Tracked sessions",
+        "coverage": "Execution cadence"
+      }
+    }
+  },
   "pages": {
     "home": {
       "helloWorld": "Deltapex Trading",
