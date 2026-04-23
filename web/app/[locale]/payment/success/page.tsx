@@ -1,133 +1,109 @@
-﻿'use client'
+'use client'
 
-import { useEffect, useState, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
-import { CheckCircle, Loader2, Crown, ArrowRight } from 'lucide-react'
-import { toast } from 'sonner'
+import { CheckCircle, Loader2, Wallet } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { getOrderDetail, getOrderBySession } from '@/util/user-api'
-import { useGlobalUserData, GlobalUserDataProvider } from '@/hooks/use-global-user-data'
-import type { OrderResponse } from '@/util/user-api'
+import { GlobalUserDataProvider, useGlobalUserData } from '@/hooks/use-global-user-data'
+import type { TokenTopupOrder } from '@/util/user-api'
+import { getTokenTopupOrders } from '@/util/user-api'
 import { formatCurrency } from '@/util/currency'
+import { formatTokenCount } from '@/util/user-utils'
 
-/**
- * 鏀粯鎴愬姛椤甸潰鍐呭缁勪欢
- * 
- * 鍔熻兘:
- * - 鏄剧ず鏀粯鎴愬姛鐘舵€? * - 灞曠ず璁㈠崟璇︽儏
- * - 鏇存柊鐢ㄦ埛浼氬憳鐘舵€? * - 鎻愪緵瀵艰埅閾炬帴
- */
 function PaymentSuccessContent() {
   const t = useTranslations()
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
-  const { userProfile, refreshUserProfile, refreshMembershipStatus } = useGlobalUserData()
-  
+  const { tokenWallet, refreshTokenWallet, refreshTokenTopupOrders } = useGlobalUserData()
+
   const [isLoading, setIsLoading] = useState(true)
-  const [order, setOrder] = useState<OrderResponse | null>(null)
+  const [order, setOrder] = useState<TokenTopupOrder | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [requestId, setRequestId] = useState<string | null>(null)
+  const [checkoutId, setCheckoutId] = useState<string | null>(null)
+  const localePrefix = pathname.split('/').filter(Boolean)[0] === 'en' ? '/en' : '/zh'
 
   useEffect(() => {
-    const fetchPaymentResult = async () => {
+    setRequestId(searchParams.get('request_id') || localStorage.getItem('pending_topup_request_id'))
+    setCheckoutId(searchParams.get('checkout_id') || localStorage.getItem('pending_topup_checkout_id'))
+  }, [searchParams])
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+    let attempts = 0
+
+    const pollOrder = async () => {
+      if (!requestId && !checkoutId) {
+        setError(t('billing.messages.missingOrderReference'))
+        setIsLoading(false)
+        return
+      }
+
       try {
-        // 浠?URL 鍙傛暟鑾峰彇璁㈠崟淇℃伅
-        const sessionId = searchParams.get('session_id')
-        const orderId = searchParams.get('order_id')
-        
-        
-        if (!sessionId && !orderId) {
-          setError(t('payment.error.missingParams'))
+        const response = await getTokenTopupOrders({
+          request_id: requestId || undefined,
+          checkout_id: checkoutId || undefined,
+          limit: 1,
+        })
+        const currentOrder = response.items[0] || null
+
+        if (!cancelled) {
+          setOrder(currentOrder)
+          await refreshTokenTopupOrders({
+            request_id: requestId || undefined,
+            checkout_id: checkoutId || undefined,
+          })
+          await refreshTokenWallet()
+          setIsLoading(false)
+        }
+
+        if (!cancelled && currentOrder?.status === 'pending' && attempts < 20) {
+          attempts += 1
+          timer = setTimeout(() => {
+            void pollOrder()
+          }, 3000)
           return
         }
 
-        await refreshUserProfile()
-        await refreshMembershipStatus()
-
-        if (orderId) {
-          const orderDetail = await getOrderDetail(parseInt(orderId))
-          setOrder(orderDetail)
-          
-          if (orderDetail.status === 'completed') {
-            toast.success(t('payment.success.message'))
-            
-            window.dispatchEvent(new CustomEvent('user-type-changed'))
-          } else if (orderDetail.status === 'processing') {
-            toast.info(t('payment.processing.message'))
-          } else {
-          }
-        } else if (sessionId) {
-          // 濡傛灉鍙湁session_id锛屽皾璇曢€氳繃session_id鑾峰彇璁㈠崟淇℃伅
-          const orderDetail = await getOrderBySession(sessionId)
-          setOrder(orderDetail)
-          
-          if (orderDetail.status === 'completed') {
-            toast.success(t('payment.success.message'))
-            
-            window.dispatchEvent(new CustomEvent('user-type-changed'))
-          } else if (orderDetail.status === 'processing') {
-            toast.info(t('payment.processing.message'))
-          } else {
-          }
+        if (currentOrder?.status === 'paid') {
+          localStorage.removeItem('pending_topup_request_id')
+          localStorage.removeItem('pending_topup_checkout_id')
         }
-
-      } catch (error) {
-        
-        if (error instanceof Error) {
-          if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-            setError(t('common.messages.loginRequired'))
-            toast.error(t('common.messages.loginRequired'))
-          } else if (error.message.includes('404') || error.message.includes('not found')) {
-            setError(t('order.error.notFound'))
-            toast.error(t('order.error.notFound'))
-          } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
-            setError(t('common.messages.accessDenied'))
-            toast.error(t('common.messages.accessDenied'))
-          } else {
-            setError(t('payment.error.fetchFailed'))
-            toast.error(t('payment.error.fetchFailed'))
-          }
-        } else {
-          setError(t('payment.error.fetchFailed'))
-          toast.error(t('payment.error.fetchFailed'))
+      } catch (fetchError) {
+        console.error('Fetch topup order failed:', fetchError)
+        if (!cancelled) {
+          setError(t('billing.messages.fetchOrderFailed'))
+          setIsLoading(false)
         }
-      } finally {
-        setIsLoading(false)
       }
     }
 
-    fetchPaymentResult()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, t])
+    void pollOrder()
 
-  // 鑾峰彇浼氬憳绫诲瀷鏄剧ず鍚嶇О
-  const getMembershipTypeName = (type: string) => {
-    switch (type) {
-      case 'monthly':
-        return t('upgrade.plans.monthly.name')
-      case 'yearly':
-        return t('upgrade.plans.yearly.name')
-      default:
-        return t('upgrade.plans.free.name')
+    return () => {
+      cancelled = true
+      if (timer) {
+        clearTimeout(timer)
+      }
     }
-  }
+  }, [checkoutId, refreshTokenTopupOrders, refreshTokenWallet, requestId, t])
 
-  const getOrderStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('order.status.completed')}</Badge>
-      case 'processing':
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('order.status.processing')}</Badge>
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">{t('order.status.pending')}</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
+  const renderStatus = () => {
+    if (!order || order.status === 'pending') {
+      return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">{t('billing.status.processing')}</Badge>
     }
+    if (order.status === 'paid') {
+      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">{t('billing.orderStatus.paid')}</Badge>
+    }
+    return <Badge variant="secondary">{order.status}</Badge>
   }
 
   if (isLoading) {
@@ -135,7 +111,7 @@ function PaymentSuccessContent() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-muted-foreground">{t('payment.loading')}</p>
+          <p className="text-muted-foreground">{t('billing.status.processing')}</p>
         </div>
       </div>
     )
@@ -151,12 +127,8 @@ function PaymentSuccessContent() {
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">{error}</p>
             <div className="flex gap-2 justify-center">
-              <Button variant="outline" onClick={() => router.back()}>
-                {t('common.actions.back')}
-              </Button>
-              <Button asChild>
-                <Link href="/">{t('common.actions.home')}</Link>
-              </Button>
+              <Button variant="outline" onClick={() => router.back()}>{t('common.actions.back')}</Button>
+              <Button asChild><Link href={localePrefix}>{t('common.actions.home')}</Link></Button>
             </div>
           </CardContent>
         </Card>
@@ -167,88 +139,56 @@ function PaymentSuccessContent() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="max-w-2xl w-full space-y-6">
-        {/* 鎴愬姛鐘舵€佸崱鐗?*/}
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              {order?.status === 'paid' ? (
+                <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+              ) : (
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+              )}
             </div>
-            <CardTitle className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {t('payment.success.title')}
+            <CardTitle className="text-2xl font-bold">
+              {order?.status === 'paid' ? t('billing.successTitle') : t('billing.processingTitle')}
             </CardTitle>
-            <p className="text-muted-foreground">
-              {t('payment.success.description')}
-            </p>
+            <p className="text-muted-foreground">{t('billing.successDescription')}</p>
           </CardHeader>
-          
           <CardContent className="space-y-6">
-            {/* 鐢ㄦ埛浼氬憳鐘舵€?*/}
-            {userProfile && (
-              <div className="bg-gradient-to-r from-red-100 to-pink-100 dark:from-red-900 dark:to-pink-900 rounded-lg p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <Crown className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <h3 className="font-semibold text-red-800 dark:text-red-200">
-                    {t('payment.success.membershipActivated')}
-                  </h3>
-                </div>
-                <p className="text-red-700 dark:text-red-300">
-                  {t('payment.success.welcomeMember', { 
-                    membershipType: getMembershipTypeName(userProfile.membership_type) 
-                  })}
-                </p>
+            <div className="rounded-lg border p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{t('billing.orderReference')}</span>
+                {renderStatus()}
               </div>
-            )}
-
-            {/* 璁㈠崟璇︽儏 */}
-            {order && (
-              <div className="border rounded-lg p-4 space-y-3">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {t('order.detail.title')}
-                  {getOrderStatusBadge(order.status)}
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">{t('order.detail.orderNumber')}:</span>
-                    <span className="ml-2 font-mono">{order.order_number}</span>
+              {order && (
+                <>
+                  <div className="text-sm font-mono">{order.order_number}</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">{t('billing.packageAmount')}:</span>
+                      <span className="ml-2">{formatTokenCount(order.token_amount)}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">{t('order.detail.finalPrice')}:</span>
+                      <span className="ml-2">{formatCurrency(order.amount, order.currency)}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('order.detail.finalPrice')}:</span>
-                      <span className="ml-2 font-semibold">{formatCurrency(order.final_price, order.currency)}</span>
-                      {order.discount_amount > 0 && (
-                        <span className="text-sm text-muted-foreground ml-1">
-                          ({t('order.detail.originalPrice')} {formatCurrency(order.original_price, order.currency)})
-                        </span>
-                      )}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('order.detail.paymentMethod')}:</span>
-                    <span className="ml-2">Stripe</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{t('order.detail.paymentTime')}:</span>
-                    <span className="ml-2">
-                      {order.paid_at ? new Date(order.paid_at).toLocaleString() : t('common.status.pending')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* 涓嬩竴姝ユ搷浣?*/}
-            <div className="pt-4">
-              <Button asChild size="lg" className="w-full h-12">
-                <Link href="/">
-                  {t('payment.success.startChatting')}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+                </>
+              )}
             </div>
 
-            {/* 甯姪淇℃伅 */}
-            <div className="text-center text-sm text-muted-foreground pt-4 border-t">
-              <p>{t('payment.success.helpText')}</p>
+            <div className="bg-muted/40 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Wallet className="h-5 w-5 text-primary" />
+                <h3 className="font-semibold">{t('billing.walletUpdated')}</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('billing.paidBalance')}: {formatTokenCount(tokenWallet?.paid_token_balance || 0)}
+              </p>
             </div>
+
+            <Button asChild size="lg" className="w-full h-12">
+              <Link href={localePrefix}>{t('billing.backToChat')}</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -256,31 +196,12 @@ function PaymentSuccessContent() {
   )
 }
 
-/**
- * 鏀粯鎴愬姛椤甸潰
- * 
- * 浣跨敤 Suspense 鍖呰浠ユ敮鎸?useSearchParams
- */
 export default function PaymentSuccessPage() {
-  const t = useTranslations()
-  
   return (
     <GlobalUserDataProvider>
-      <Suspense fallback={
-        <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-green-950 dark:via-emerald-950 dark:to-teal-950 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full">
-            <Card className="border-green-200 dark:border-green-800 shadow-xl">
-              <CardContent className="p-8 text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-                <p className="mt-4 text-muted-foreground">{t('common.actions.loading')}</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
         <PaymentSuccessContent />
       </Suspense>
     </GlobalUserDataProvider>
   )
 }
-

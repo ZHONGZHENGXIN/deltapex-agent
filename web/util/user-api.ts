@@ -15,6 +15,59 @@ export interface StripeCheckoutResponse {
   order_id: number
 }
 
+export interface TokenPackage {
+  id: number
+  code: 'starter' | 'growth' | 'scale' | string
+  name: string
+  token_amount: number
+  price: number
+  currency: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TokenWallet {
+  user_id: number
+  paid_token_balance: number
+  total_recharged_tokens: number
+  total_consumed_paid_tokens: number
+  created_at: string
+  updated_at: string
+}
+
+export interface TokenTopupOrder {
+  id: number
+  order_number: string
+  request_id: string
+  user_id: number
+  token_package_id: number
+  status: 'pending' | 'paid' | 'failed' | 'expired' | 'cancelled'
+  amount: number
+  currency: string
+  token_amount: number
+  creem_checkout_id?: string
+  creem_order_id?: string
+  creem_customer_id?: string
+  paid_at?: string
+  failure_reason?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateCreemCheckoutRequest {
+  package_id: number
+  success_url: string
+  cancel_url?: string
+}
+
+export interface CreateCreemCheckoutResponse {
+  checkout_url: string
+  request_id: string
+  order_number: string
+  checkout_id: string
+}
+
 export interface OrderResponse {
   id: number
   order_number: string
@@ -256,6 +309,73 @@ export async function continueOrderPayment(
     return response as StripeCheckoutResponse
   } catch (error) {
     console.error('Failed to continue order payment:', error)
+    throw error
+  }
+}
+
+export async function getTokenPackages(): Promise<{ items: TokenPackage[], total: number }> {
+  try {
+    const response = await fetcher('/billing/packages', {
+      method: 'GET',
+      auth: true,
+    })
+    return response as { items: TokenPackage[], total: number }
+  } catch (error) {
+    console.error('Failed to fetch token packages:', error)
+    throw error
+  }
+}
+
+export async function getTokenWallet(): Promise<TokenWallet> {
+  try {
+    const response = await fetcher('/billing/wallet', {
+      method: 'GET',
+      auth: true,
+    })
+    return response as TokenWallet
+  } catch (error) {
+    console.error('Failed to fetch token wallet:', error)
+    throw error
+  }
+}
+
+export async function getTokenTopupOrders(params?: {
+  skip?: number
+  limit?: number
+  request_id?: string
+  checkout_id?: string
+}): Promise<{ items: TokenTopupOrder[], total: number }> {
+  try {
+    const queryParams = new URLSearchParams()
+    if (params?.skip !== undefined) queryParams.append('skip', params.skip.toString())
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString())
+    if (params?.request_id) queryParams.append('request_id', params.request_id)
+    if (params?.checkout_id) queryParams.append('checkout_id', params.checkout_id)
+
+    const url = `/billing/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
+    const response = await fetcher(url, {
+      method: 'GET',
+      auth: true,
+    })
+    return response as { items: TokenTopupOrder[], total: number }
+  } catch (error) {
+    console.error('Failed to fetch token topup orders:', error)
+    throw error
+  }
+}
+
+export async function createCreemCheckout(
+  checkoutData: CreateCreemCheckoutRequest
+): Promise<CreateCreemCheckoutResponse> {
+  try {
+    const response = await fetcher('/billing/creem/checkout', {
+      method: 'POST',
+      auth: true,
+      body: JSON.stringify(checkoutData)
+    })
+    return response as CreateCreemCheckoutResponse
+  } catch (error) {
+    console.error('Failed to create creem checkout:', error)
     throw error
   }
 }

@@ -21,6 +21,14 @@ interface TokenUsage {
   total_tokens: number
 }
 
+interface ApiErrorDetail {
+  code?: string
+  message?: string
+  required_paid_tokens?: number
+  available_paid_tokens?: number
+  remaining_free_tokens?: number
+}
+
 /**
  * 格式化时间显示
  */
@@ -28,6 +36,23 @@ function formatTime(ts: string) {
   const date = new Date(ts)
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
   return localDate.toLocaleDateString() + ' ' + localDate.toLocaleTimeString([])
+}
+
+function getApiErrorDetail(error: unknown): ApiErrorDetail | null {
+  if (!error || typeof error !== 'object') {
+    return null
+  }
+
+  const details = (error as { details?: { detail?: ApiErrorDetail } & ApiErrorDetail }).details
+  if (!details) {
+    return null
+  }
+
+  if (details.detail && typeof details.detail === 'object') {
+    return details.detail
+  }
+
+  return details
 }
 
 interface ChatContentPageProps {
@@ -319,20 +344,22 @@ export default function ChatContentPage({
       })
       
     } catch (error: unknown) {
-      // 错误处理
       if (error instanceof Error && error.name === 'AbortError') {
-        // 用户终止了对话生成
+        // user cancelled generation
       } else {
         console.error('Send message failed:', error)
-        
-        // 获取具体的错误信息
-        let errorMessage = t('chat.messages.errorOccurred') // 默认错误信息
-        
+
+        const apiErrorDetail = getApiErrorDetail(error)
+        let errorMessage = t('chat.messages.errorOccurred')
+
         if (error instanceof Error) {
-          // 优先使用后端返回的具体错误信息
           errorMessage = error.message || t('chat.messages.errorOccurred')
         }
-        
+
+        if (apiErrorDetail?.code === 'insufficient_token_balance') {
+          window.dispatchEvent(new CustomEvent('open-recharge-dialog'))
+        }
+
         setError(errorMessage)
         setMessages(prev => {
           const newMsgs = [...prev]

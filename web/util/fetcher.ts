@@ -147,7 +147,13 @@ export async function fetcher<T>(
         
         try {
             const error = await res.json();
-            errorMessage = error.detail || error.message || `HTTP ${res.status}: ${res.statusText}`;
+            if (typeof error?.detail === 'string') {
+                errorMessage = error.detail;
+            } else if (error?.detail && typeof error.detail === 'object') {
+                errorMessage = error.detail.message || error.message || `HTTP ${res.status}: ${res.statusText}`;
+            } else {
+                errorMessage = error.message || `HTTP ${res.status}: ${res.statusText}`;
+            }
             errorDetails = error;
         } catch (error) {
             console.error('Failed to parse error response:', error)

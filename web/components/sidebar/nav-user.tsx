@@ -36,7 +36,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import ProfileDialog from '@/components/profile-dialog'
-import UpgradePlanDialog from '@/components/upgrade-plan-dialog'
+import RechargeDialog from '@/components/recharge-dialog'
 import OrdersDialog from '@/components/orders-dialog'
 import { useMembershipStatus } from '@/hooks/use-global-user-data'
 import { 
@@ -58,7 +58,7 @@ export function NavUser({
   const router = useRouter()
   const t = useTranslations()
   const { userType, isAdmin } = useUserStatus(user.email)
-  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false)
+  const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false)
   const [profileDialogOpen, setProfileDialogOpen] = useState(false)
   const [ordersDialogOpen, setOrdersDialogOpen] = useState(false)
   const { membershipStatus } = useMembershipStatus()
@@ -171,11 +171,11 @@ export function NavUser({
 
               {/* 升级会员按钮 - 所有用户都可以看到 */}
               <DropdownMenuItem 
-                onClick={() => setUpgradeDialogOpen(true)}
+                onClick={() => setRechargeDialogOpen(true)}
                 className="bg-accent text-accent-foreground hover:bg-accent/80 focus:bg-accent/80"
               >
-                <Crown className="text-primary" />
-                {t('upgrade.buttonText')}
+                <Zap className="text-primary" />
+                {t('billing.buttonText')}
               </DropdownMenuItem>
               {/* 只有管理员才显示管理后台按钮 */}
               {isAdmin && (
@@ -208,7 +208,7 @@ export function NavUser({
       />
       
       {/* 升级会员弹框 */}
-      <UpgradePlanDialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen} />
+      <RechargeDialog open={rechargeDialogOpen} onOpenChange={setRechargeDialogOpen} />
       
       {/* 订单管理弹框 */}
       <OrdersDialog open={ordersDialogOpen} onOpenChange={setOrdersDialogOpen} />

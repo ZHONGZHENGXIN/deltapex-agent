@@ -9,7 +9,7 @@ import { XCircle, RefreshCw, ArrowLeft } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import UpgradePlanDialog from '@/components/upgrade-plan-dialog'
+import RechargeDialog from '@/components/recharge-dialog'
 
 /**
  * 鏀粯鍙栨秷椤甸潰鍐呭缁勪欢
@@ -21,7 +21,7 @@ function PaymentCancelContent() {
   const t = useTranslations()
   const searchParams = useSearchParams()
   
-  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false)
+  const [showRechargeDialog, setShowRechargeDialog] = useState(false)
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id')
@@ -66,7 +66,7 @@ function PaymentCancelContent() {
               {/* 閲嶆柊鍗囩骇鎸夐挳 */}
               <Button 
                 size="lg"
-                onClick={() => setShowUpgradeDialog(true)}
+                onClick={() => setShowRechargeDialog(true)}
                 className="w-full h-12 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-700 hover:to-pink-700"
               >
                 <RefreshCw className="h-4 w-4" />
@@ -101,9 +101,9 @@ function PaymentCancelContent() {
       </div>
 
       {/* 鍗囩骇瀵硅瘽妗?*/}
-      <UpgradePlanDialog 
-        open={showUpgradeDialog} 
-        onOpenChange={setShowUpgradeDialog}
+      <RechargeDialog 
+        open={showRechargeDialog} 
+        onOpenChange={setShowRechargeDialog}
       />
     </div>
   )

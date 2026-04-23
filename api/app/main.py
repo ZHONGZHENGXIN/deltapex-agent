@@ -13,9 +13,11 @@ from app.db.base import (
     create_db_and_tables,
     init_default_agent,
     init_default_membership_plans,
+    init_default_token_packages,
 )
 from app.routers.v1.admin import admin_router
 from app.routers.v1.auth import auth_router
+from app.routers.v1.billing import billing_router
 from app.routers.v1.chat import chat_router
 from app.routers.v1.membership import membership_router
 from app.routers.v1.order import order_router
@@ -44,6 +46,7 @@ async def lifespan(app: FastAPI):
         create_db_and_tables()
         # 初始化默认 Agent
         init_default_agent()
+        init_default_token_packages()
         # 初始化默认会员计划
         init_default_membership_plans()
         # 初始化 Redis
@@ -101,6 +104,7 @@ app.include_router(admin_router, prefix=BASE_PREFIX, tags=["admin"])
 app.include_router(user_router, prefix=BASE_PREFIX, tags=["user"])
 app.include_router(membership_router, prefix=BASE_PREFIX, tags=["membership"])
 app.include_router(order_router, prefix=BASE_PREFIX, tags=["order"])
+app.include_router(billing_router, prefix=BASE_PREFIX, tags=["billing"])
 
 if __name__ == "__main__":
     uvicorn.run(

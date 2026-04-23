@@ -19,7 +19,7 @@ import {
 import LanguageSwitchButton from "@/components/language-switch-button"
 import { AppSidebar } from "@/components/sidebar/app-sidebar"
 import ThemeToggleButton from "@/components/theme-toggle-button"
-import UpgradePlanDialog from "@/components/upgrade-plan-dialog"
+import RechargeDialog from "@/components/recharge-dialog"
 
 import { getValidAccessToken } from '@/util/token'
 import { useGlobalDataCache } from '@/hooks/use-global-data-cache'
@@ -123,7 +123,7 @@ export default function SharedLayout({ children, breadcrumbTitle }: SharedLayout
             </Breadcrumb>
           </div>
           <div className="ml-auto justify-end pr-4 flex items-center gap-2">
-            <UpgradePlanDialog />
+            <RechargeDialog />
             <ThemeToggleButton />
             <LanguageSwitchButton />
           </div>

@@ -809,5 +809,38 @@
     "error": {
       "notFound": "Order not found or has been deleted"
     }
+  },
+  "billing": {
+    "title": "Recharge Tokens",
+    "buttonText": "Recharge",
+    "balanceTitle": "Paid Token Balance",
+    "paidBalance": "Available paid tokens",
+    "totalRecharged": "Total recharged",
+    "freeQuotaTitle": "Free Quota Today",
+    "freeRemaining": "Free tokens remaining today",
+    "freeUsedToday": "Free tokens used today",
+    "packageTokens": "Token amount",
+    "buyNow": "Buy now",
+    "recentOrders": "Recent recharge orders",
+    "noOrders": "No recharge orders yet",
+    "successTitle": "Recharge successful",
+    "processingTitle": "Recharge processing",
+    "successDescription": "Your payment result is synced by webhook. Balance updates will appear automatically after confirmation.",
+    "orderReference": "Order reference",
+    "packageAmount": "Token amount",
+    "walletUpdated": "Wallet balance",
+    "backToChat": "Back to chat",
+    "orderStatus": {
+      "paid": "Paid",
+      "pending": "Pending"
+    },
+    "status": {
+      "processing": "Processing"
+    },
+    "messages": {
+      "checkoutFailed": "Failed to create checkout session. Please try again.",
+      "missingOrderReference": "Missing recharge order reference.",
+      "fetchOrderFailed": "Failed to fetch recharge order status."
+    }
   }
 }

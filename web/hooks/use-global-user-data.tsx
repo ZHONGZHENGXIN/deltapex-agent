@@ -14,8 +14,15 @@ import type { MembershipPlan, MembershipStatus } from '@/app/[locale]/admin/type
 import type { UserProfile } from '@/util/auth'
 import { getUserProfile } from '@/util/auth'
 import { getValidAccessToken } from '@/util/token'
-import type { OrderResponse } from '@/util/user-api'
-import { getMembershipPlans, getUserMembershipStatus, getUserOrders } from '@/util/user-api'
+import type { OrderResponse, TokenPackage, TokenTopupOrder, TokenWallet } from '@/util/user-api'
+import {
+  getMembershipPlans,
+  getTokenPackages,
+  getTokenTopupOrders,
+  getTokenWallet,
+  getUserMembershipStatus,
+  getUserOrders,
+} from '@/util/user-api'
 
 interface GlobalUserData {
   userProfile: UserProfile | null
@@ -27,10 +34,19 @@ interface GlobalUserData {
   userOrders: OrderResponse[]
   userOrdersLoading: boolean
   pendingOrders: OrderResponse[]
+  tokenWallet: TokenWallet | null
+  tokenWalletLoading: boolean
+  tokenPackages: TokenPackage[]
+  tokenPackagesLoading: boolean
+  tokenTopupOrders: TokenTopupOrder[]
+  tokenTopupOrdersLoading: boolean
   refreshUserProfile: () => Promise<void>
   refreshMembershipStatus: () => Promise<void>
   refreshMembershipPlans: () => Promise<void>
   refreshUserOrders: (status?: string) => Promise<void>
+  refreshTokenWallet: () => Promise<void>
+  refreshTokenPackages: () => Promise<void>
+  refreshTokenTopupOrders: (params?: { request_id?: string; checkout_id?: string }) => Promise<void>
   refreshAllData: () => Promise<void>
 }
 
@@ -62,11 +78,20 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
   const [membershipPlansLoading, setMembershipPlansLoading] = useState(false)
   const [userOrders, setUserOrders] = useState<OrderResponse[]>([])
   const [userOrdersLoading, setUserOrdersLoading] = useState(false)
+  const [tokenWallet, setTokenWallet] = useState<TokenWallet | null>(null)
+  const [tokenWalletLoading, setTokenWalletLoading] = useState(false)
+  const [tokenPackages, setTokenPackages] = useState<TokenPackage[]>([])
+  const [tokenPackagesLoading, setTokenPackagesLoading] = useState(false)
+  const [tokenTopupOrders, setTokenTopupOrders] = useState<TokenTopupOrder[]>([])
+  const [tokenTopupOrdersLoading, setTokenTopupOrdersLoading] = useState(false)
 
   const isFetchingUserProfile = useRef(false)
   const isFetchingMembershipStatus = useRef(false)
   const isFetchingMembershipPlans = useRef(false)
   const isFetchingUserOrders = useRef(false)
+  const isFetchingTokenWallet = useRef(false)
+  const isFetchingTokenPackages = useRef(false)
+  const isFetchingTokenTopupOrders = useRef(false)
 
   const hasAuthenticatedSession = useCallback(async () => {
     const token = await getValidAccessToken()
@@ -179,6 +204,81 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
     }
   }, [hasAuthenticatedSession])
 
+  const refreshTokenWallet = useCallback(async () => {
+    if (isFetchingTokenWallet.current) {
+      return
+    }
+
+    isFetchingTokenWallet.current = true
+    setTokenWalletLoading(true)
+
+    try {
+      if (!(await hasAuthenticatedSession())) {
+        setTokenWallet(null)
+        return
+      }
+
+      const wallet = await getTokenWallet()
+      setTokenWallet(wallet)
+    } catch (error) {
+      console.error('Refresh token wallet failed:', error)
+      setTokenWallet(null)
+    } finally {
+      isFetchingTokenWallet.current = false
+      setTokenWalletLoading(false)
+    }
+  }, [hasAuthenticatedSession])
+
+  const refreshTokenPackages = useCallback(async () => {
+    if (isFetchingTokenPackages.current) {
+      return
+    }
+
+    isFetchingTokenPackages.current = true
+    setTokenPackagesLoading(true)
+
+    try {
+      if (!(await hasAuthenticatedSession())) {
+        setTokenPackages([])
+        return
+      }
+
+      const packages = await getTokenPackages()
+      setTokenPackages(packages.items)
+    } catch (error) {
+      console.error('Refresh token packages failed:', error)
+      setTokenPackages([])
+    } finally {
+      isFetchingTokenPackages.current = false
+      setTokenPackagesLoading(false)
+    }
+  }, [hasAuthenticatedSession])
+
+  const refreshTokenTopupOrders = useCallback(async (params?: { request_id?: string; checkout_id?: string }) => {
+    if (isFetchingTokenTopupOrders.current) {
+      return
+    }
+
+    isFetchingTokenTopupOrders.current = true
+    setTokenTopupOrdersLoading(true)
+
+    try {
+      if (!(await hasAuthenticatedSession())) {
+        setTokenTopupOrders([])
+        return
+      }
+
+      const orders = await getTokenTopupOrders(params)
+      setTokenTopupOrders(orders.items)
+    } catch (error) {
+      console.error('Refresh token topup orders failed:', error)
+      setTokenTopupOrders([])
+    } finally {
+      isFetchingTokenTopupOrders.current = false
+      setTokenTopupOrdersLoading(false)
+    }
+  }, [hasAuthenticatedSession])
+
   const refreshAllData = useCallback(async () => {
     await refreshUserProfile()
 
@@ -186,14 +286,27 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
       setMembershipStatus(DEFAULT_MEMBERSHIP_STATUS)
       setMembershipPlans([])
       setUserOrders([])
+      setTokenWallet(null)
+      setTokenPackages([])
+      setTokenTopupOrders([])
       return
     }
 
-    await Promise.all([refreshMembershipStatus(), refreshMembershipPlans(), refreshUserOrders()])
+    await Promise.all([
+      refreshMembershipStatus(),
+      refreshMembershipPlans(),
+      refreshUserOrders(),
+      refreshTokenWallet(),
+      refreshTokenPackages(),
+      refreshTokenTopupOrders(),
+    ])
   }, [
     hasAuthenticatedSession,
     refreshMembershipPlans,
     refreshMembershipStatus,
+    refreshTokenPackages,
+    refreshTokenTopupOrders,
+    refreshTokenWallet,
     refreshUserOrders,
     refreshUserProfile,
   ])
@@ -224,10 +337,19 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
       userOrders,
       userOrdersLoading,
       pendingOrders: userOrders.filter((order) => order.status === 'pending'),
+      tokenWallet,
+      tokenWalletLoading,
+      tokenPackages,
+      tokenPackagesLoading,
+      tokenTopupOrders,
+      tokenTopupOrdersLoading,
       refreshUserProfile,
       refreshMembershipStatus,
       refreshMembershipPlans,
       refreshUserOrders,
+      refreshTokenWallet,
+      refreshTokenPackages,
+      refreshTokenTopupOrders,
       refreshAllData,
     }),
     [
@@ -238,8 +360,17 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
       refreshAllData,
       refreshMembershipPlans,
       refreshMembershipStatus,
+      refreshTokenPackages,
+      refreshTokenTopupOrders,
+      refreshTokenWallet,
       refreshUserOrders,
       refreshUserProfile,
+      tokenPackages,
+      tokenPackagesLoading,
+      tokenTopupOrders,
+      tokenTopupOrdersLoading,
+      tokenWallet,
+      tokenWalletLoading,
       userOrders,
       userOrdersLoading,
       userProfile,

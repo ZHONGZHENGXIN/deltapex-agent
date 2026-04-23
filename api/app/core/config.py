@@ -151,6 +151,12 @@ class Settings:
     STRIPE_PUBLIC_KEY: str | None = _get_env("STRIPE_PUBLIC_KEY")
     STRIPE_PRIVATE_KEY: str | None = _get_env("STRIPE_PRIVATE_KEY")
     STRIPE_WEBHOOK_SECRET: str | None = _get_env("STRIPE_WEBHOOK_SECRET")
+    CREEM_API_KEY: str | None = _get_env("CREEM_API_KEY")
+    CREEM_WEBHOOK_SECRET: str | None = _get_env("CREEM_WEBHOOK_SECRET")
+    CREEM_API_BASE_URL: str = _get_env("CREEM_API_BASE_URL", default="https://api.creem.io") or "https://api.creem.io"
+    CREEM_TOPUP_STARTER_PRODUCT_ID: str | None = _get_env("CREEM_TOPUP_STARTER_PRODUCT_ID")
+    CREEM_TOPUP_GROWTH_PRODUCT_ID: str | None = _get_env("CREEM_TOPUP_GROWTH_PRODUCT_ID")
+    CREEM_TOPUP_SCALE_PRODUCT_ID: str | None = _get_env("CREEM_TOPUP_SCALE_PRODUCT_ID")
 
     MEMBERSHIP_FREE_NAME: str = _get_env("MEMBERSHIP_FREE_NAME", default="免费会员") or "免费会员"
     MEMBERSHIP_FREE_DAILY_MESSAGE_LIMIT: int = _get_int_env("MEMBERSHIP_FREE_DAILY_MESSAGE_LIMIT", default=100)
