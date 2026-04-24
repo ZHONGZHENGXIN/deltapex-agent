@@ -85,6 +85,11 @@ def _extract_token_count(item: Any) -> int:
         if isinstance(value, (int, float)):
             return int(value)
 
+    input_tokens = item.get("inputTokens")
+    output_tokens = item.get("outputTokens")
+    if isinstance(input_tokens, (int, float)) or isinstance(output_tokens, (int, float)):
+        return int(input_tokens or 0) + int(output_tokens or 0)
+
     nested_candidates = (
         item.get("usage"),
         item.get("responseData"),

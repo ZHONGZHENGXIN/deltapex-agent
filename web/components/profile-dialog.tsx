@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { 
@@ -48,7 +49,13 @@ export default function ProfileDialog({
 }: ProfileDialogProps) {
   const t = useTranslations()
   const { userType, isAdmin } = useUserStatus(user.email)
-  const { membershipStatus } = useMembershipStatus()
+  const { membershipStatus, refresh } = useMembershipStatus()
+
+  useEffect(() => {
+    if (open) {
+      void refresh()
+    }
+  }, [open, refresh])
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
