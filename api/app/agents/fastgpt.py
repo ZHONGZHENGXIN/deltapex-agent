@@ -93,6 +93,7 @@ async def create_fastgpt_response_stream(
         async with client.stream("POST", agent.api_url, headers=_headers(agent), json=payload) as response:
             response.raise_for_status()
             current_event = ""
+            final_usage_info: Optional[Dict[str, int]] = None
             async for line in response.aiter_lines():
                 if not line:
                     continue
@@ -106,7 +107,10 @@ async def create_fastgpt_response_stream(
                     raw_line = raw_line[5:].strip()
 
                 if raw_line == "[DONE]":
-                    break
+                    # FastGPT sends [DONE] for the answer stream first, then may continue
+                    # with detail events such as flowResponses when detail=true.
+                    current_event = ""
+                    continue
 
                 try:
                     data = json.loads(raw_line)
@@ -117,12 +121,17 @@ async def create_fastgpt_response_stream(
                     if current_event == "flowResponses":
                         usage_info = _extract_flow_usage(data)
                         if usage_info["total_tokens"] > 0:
-                            yield "", usage_info
+                            final_usage_info = usage_info
                     continue
+
+                if current_event == "flowResponses" and isinstance(data.get("responseData"), list):
+                    usage_info = _extract_flow_usage(data["responseData"])
+                    if usage_info["total_tokens"] > 0:
+                        final_usage_info = usage_info
 
                 usage_info = _extract_usage(data)
                 if usage_info["total_tokens"] > 0:
-                    yield "", usage_info
+                    final_usage_info = usage_info
 
                 choices = data.get("choices") or []
                 if choices:
@@ -130,6 +139,9 @@ async def create_fastgpt_response_stream(
                     content = delta.get("content") or ""
                     if content:
                         yield content, None
+
+            if final_usage_info and final_usage_info["total_tokens"] > 0:
+                yield "", final_usage_info
 
 
 async def test_fastgpt_connection(agent: Agent) -> Dict[str, Any]:

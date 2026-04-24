@@ -811,36 +811,36 @@
     }
   },
   "billing": {
-    "title": "?? Token",
-    "buttonText": "????",
-    "balanceTitle": "?? Token ??",
-    "paidBalance": "?????? Token",
-    "totalRecharged": "????",
-    "freeQuotaTitle": "??????",
-    "freeRemaining": "?????? Token",
-    "freeUsedToday": "?????? Token",
-    "packageTokens": "Token ??",
-    "buyNow": "????",
-    "recentOrders": "??????",
-    "noOrders": "??????",
-    "successTitle": "????",
-    "processingTitle": "?????",
-    "successDescription": "????? webhook ????????????????",
-    "orderReference": "????",
-    "packageAmount": "Token ??",
-    "walletUpdated": "????",
-    "backToChat": "????",
+    "title": "充值 Token",
+    "buttonText": "立即充值",
+    "balanceTitle": "付费 Token 余额",
+    "paidBalance": "当前可用付费 Token",
+    "totalRecharged": "累计充值",
+    "freeQuotaTitle": "今日免费额度",
+    "freeRemaining": "今日剩余免费 Token",
+    "freeUsedToday": "今日已用免费 Token",
+    "packageTokens": "Token 数量",
+    "buyNow": "立即购买",
+    "recentOrders": "最近充值订单",
+    "noOrders": "暂无充值订单",
+    "successTitle": "充值成功",
+    "processingTitle": "充值处理中",
+    "successDescription": "支付结果以 webhook 到账为准，余额确认后会自动更新。",
+    "orderReference": "订单编号",
+    "packageAmount": "Token 数量",
+    "walletUpdated": "钱包余额",
+    "backToChat": "返回聊天",
     "orderStatus": {
-      "paid": "???",
-      "pending": "???"
+      "paid": "已支付",
+      "pending": "待处理"
     },
     "status": {
-      "processing": "???"
+      "processing": "处理中"
     },
     "messages": {
-      "checkoutFailed": "???????????????",
-      "missingOrderReference": "?????????",
-      "fetchOrderFailed": "???????????"
+      "checkoutFailed": "创建支付会话失败，请稍后重试。",
+      "missingOrderReference": "缺少充值订单标识。",
+      "fetchOrderFailed": "获取充值订单状态失败。"
     }
   }
 }
