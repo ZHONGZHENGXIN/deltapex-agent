@@ -344,6 +344,7 @@ export async function getTokenTopupOrders(params?: {
   limit?: number
   request_id?: string
   checkout_id?: string
+  order_number?: string
 }): Promise<{ items: TokenTopupOrder[], total: number }> {
   try {
     const queryParams = new URLSearchParams()
@@ -351,6 +352,7 @@ export async function getTokenTopupOrders(params?: {
     if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString())
     if (params?.request_id) queryParams.append('request_id', params.request_id)
     if (params?.checkout_id) queryParams.append('checkout_id', params.checkout_id)
+    if (params?.order_number) queryParams.append('order_number', params.order_number)
 
     const url = `/billing/orders${queryParams.toString() ? '?' + queryParams.toString() : ''}`
     const response = await fetcher(url, {

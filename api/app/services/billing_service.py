@@ -2,6 +2,7 @@ import hashlib
 import hmac
 from dataclasses import dataclass
 from typing import Any, Optional
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
 import httpx
 from fastapi import HTTPException
@@ -84,6 +85,7 @@ class BillingService:
         limit: int = 20,
         request_id: Optional[str] = None,
         checkout_id: Optional[str] = None,
+        order_number: Optional[str] = None,
     ) -> tuple[list, int]:
         return list_topup_orders(
             self.db,
@@ -92,7 +94,16 @@ class BillingService:
             limit=limit,
             request_id=request_id,
             checkout_id=checkout_id,
+            order_number=order_number,
         )
+
+    @staticmethod
+    def _build_success_url(success_url: str, *, request_id: str, order_number: str) -> str:
+        parsed = urlparse(success_url)
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query.setdefault("topup_request_id", request_id)
+        query.setdefault("topup_order_number", order_number)
+        return urlunparse(parsed._replace(query=urlencode(query)))
 
     async def create_creem_checkout(
         self,
@@ -113,10 +124,15 @@ class BillingService:
             raise HTTPException(status_code=500, detail="CREEM_API_KEY is not configured")
 
         order = create_topup_order(self.db, user_id=user.id, token_package=token_package)
+        success_redirect_url = self._build_success_url(
+            success_url,
+            request_id=order.request_id,
+            order_number=order.order_number,
+        )
         payload = {
             "product_id": token_package.creem_product_id,
             "request_id": order.request_id,
-            "success_url": success_url,
+            "success_url": success_redirect_url,
             "metadata": {
                 "user_id": str(user.id),
                 "local_order_id": str(order.id),

@@ -94,6 +94,7 @@ export default function RechargeDialog({ open: externalOpen, onOpenChange }: Rec
 
       localStorage.setItem('pending_topup_request_id', response.request_id)
       localStorage.setItem('pending_topup_checkout_id', response.checkout_id)
+      localStorage.setItem('pending_topup_order_number', response.order_number)
       window.location.href = response.checkout_url
     } catch (error) {
       console.error('Create Creem checkout failed:', error)

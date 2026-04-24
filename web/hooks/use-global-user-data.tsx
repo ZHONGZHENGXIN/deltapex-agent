@@ -46,7 +46,7 @@ interface GlobalUserData {
   refreshUserOrders: (status?: string) => Promise<void>
   refreshTokenWallet: () => Promise<void>
   refreshTokenPackages: () => Promise<void>
-  refreshTokenTopupOrders: (params?: { request_id?: string; checkout_id?: string }) => Promise<void>
+  refreshTokenTopupOrders: (params?: { request_id?: string; checkout_id?: string; order_number?: string }) => Promise<void>
   refreshAllData: () => Promise<void>
 }
 
@@ -254,7 +254,7 @@ export function GlobalUserDataProvider({ children }: { children: ReactNode }) {
     }
   }, [hasAuthenticatedSession])
 
-  const refreshTokenTopupOrders = useCallback(async (params?: { request_id?: string; checkout_id?: string }) => {
+  const refreshTokenTopupOrders = useCallback(async (params?: { request_id?: string; checkout_id?: string; order_number?: string }) => {
     if (isFetchingTokenTopupOrders.current) {
       return
     }

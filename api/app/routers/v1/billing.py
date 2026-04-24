@@ -43,6 +43,7 @@ def get_billing_orders(
     limit: int = Query(20, ge=1, le=100),
     request_id: str | None = Query(default=None),
     checkout_id: str | None = Query(default=None),
+    order_number: str | None = Query(default=None),
 ) -> TokenTopupOrderListResponse:
     service = BillingService(db)
     items, total = service.list_orders(
@@ -51,6 +52,7 @@ def get_billing_orders(
         limit=limit,
         request_id=request_id,
         checkout_id=checkout_id,
+        order_number=order_number,
     )
     return TokenTopupOrderListResponse(items=items, total=total)
 

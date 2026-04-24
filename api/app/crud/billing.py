@@ -125,6 +125,7 @@ def list_topup_orders(
     limit: int = 20,
     request_id: Optional[str] = None,
     checkout_id: Optional[str] = None,
+    order_number: Optional[str] = None,
 ) -> Tuple[list[TokenTopupOrder], int]:
     query = select(TokenTopupOrder).where(TokenTopupOrder.user_id == user_id)
     count_query = select(func.count(TokenTopupOrder.id)).where(TokenTopupOrder.user_id == user_id)
@@ -136,6 +137,10 @@ def list_topup_orders(
     if checkout_id:
         query = query.where(TokenTopupOrder.creem_checkout_id == checkout_id)
         count_query = count_query.where(TokenTopupOrder.creem_checkout_id == checkout_id)
+
+    if order_number:
+        query = query.where(TokenTopupOrder.order_number == order_number)
+        count_query = count_query.where(TokenTopupOrder.order_number == order_number)
 
     total = db.exec(count_query).one() or 0
     items = list(db.exec(query.order_by(TokenTopupOrder.created_at.desc()).offset(skip).limit(limit)).all())

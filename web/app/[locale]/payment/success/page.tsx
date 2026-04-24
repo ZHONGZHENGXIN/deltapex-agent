@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -28,11 +28,44 @@ function PaymentSuccessContent() {
   const [error, setError] = useState<string | null>(null)
   const [requestId, setRequestId] = useState<string | null>(null)
   const [checkoutId, setCheckoutId] = useState<string | null>(null)
+  const [orderNumber, setOrderNumber] = useState<string | null>(null)
+  const [referenceResolved, setReferenceResolved] = useState(false)
   const localePrefix = pathname.split('/').filter(Boolean)[0] === 'en' ? '/en' : '/zh'
+  const hasCreemRedirectSignal = useMemo(
+    () =>
+      ['order_id', 'customer_id', 'product_id', 'signature'].some((key) =>
+        Boolean(searchParams.get(key))
+      ),
+    [searchParams]
+  )
 
   useEffect(() => {
-    setRequestId(searchParams.get('request_id') || localStorage.getItem('pending_topup_request_id'))
-    setCheckoutId(searchParams.get('checkout_id') || localStorage.getItem('pending_topup_checkout_id'))
+    const nextRequestId =
+      searchParams.get('request_id') ||
+      searchParams.get('topup_request_id') ||
+      localStorage.getItem('pending_topup_request_id')
+    const nextCheckoutId =
+      searchParams.get('checkout_id') ||
+      localStorage.getItem('pending_topup_checkout_id')
+    const nextOrderNumber =
+      searchParams.get('topup_order_number') ||
+      searchParams.get('order_number') ||
+      localStorage.getItem('pending_topup_order_number')
+
+    if (nextRequestId) {
+      localStorage.setItem('pending_topup_request_id', nextRequestId)
+    }
+    if (nextCheckoutId) {
+      localStorage.setItem('pending_topup_checkout_id', nextCheckoutId)
+    }
+    if (nextOrderNumber) {
+      localStorage.setItem('pending_topup_order_number', nextOrderNumber)
+    }
+
+    setRequestId(nextRequestId)
+    setCheckoutId(nextCheckoutId)
+    setOrderNumber(nextOrderNumber)
+    setReferenceResolved(true)
   }, [searchParams])
 
   useEffect(() => {
@@ -41,25 +74,43 @@ function PaymentSuccessContent() {
     let attempts = 0
 
     const pollOrder = async () => {
-      if (!requestId && !checkoutId) {
-        setError(t('billing.messages.missingOrderReference'))
-        setIsLoading(false)
+      if (!referenceResolved) {
         return
       }
 
       try {
-        const response = await getTokenTopupOrders({
-          request_id: requestId || undefined,
-          checkout_id: checkoutId || undefined,
-          limit: 1,
-        })
-        const currentOrder = response.items[0] || null
+        let response
+        if (requestId || checkoutId || orderNumber) {
+          response = await getTokenTopupOrders({
+            request_id: requestId || undefined,
+            checkout_id: checkoutId || undefined,
+            order_number: orderNumber || undefined,
+            limit: 1,
+          })
+        } else if (hasCreemRedirectSignal) {
+          response = await getTokenTopupOrders({ limit: 5 })
+        } else {
+          setError(t('billing.messages.missingOrderReference'))
+          setIsLoading(false)
+          return
+        }
+
+        let currentOrder: TokenTopupOrder | null = response.items[0] ?? null
+        if (!currentOrder && hasCreemRedirectSignal && !requestId && !checkoutId && !orderNumber) {
+          currentOrder =
+            response.items.find((item) => {
+              const createdAt = new Date(item.created_at).getTime()
+              return Number.isFinite(createdAt) && Date.now() - createdAt < 30 * 60 * 1000
+            }) || null
+        }
 
         if (!cancelled) {
+          setError(null)
           setOrder(currentOrder)
           await refreshTokenTopupOrders({
             request_id: requestId || undefined,
             checkout_id: checkoutId || undefined,
+            order_number: orderNumber || undefined,
           })
           await refreshTokenWallet()
           setIsLoading(false)
@@ -76,6 +127,7 @@ function PaymentSuccessContent() {
         if (currentOrder?.status === 'paid') {
           localStorage.removeItem('pending_topup_request_id')
           localStorage.removeItem('pending_topup_checkout_id')
+          localStorage.removeItem('pending_topup_order_number')
         }
       } catch (fetchError) {
         console.error('Fetch topup order failed:', fetchError)
@@ -94,7 +146,7 @@ function PaymentSuccessContent() {
         clearTimeout(timer)
       }
     }
-  }, [checkoutId, refreshTokenTopupOrders, refreshTokenWallet, requestId, t])
+  }, [checkoutId, hasCreemRedirectSignal, orderNumber, referenceResolved, refreshTokenTopupOrders, refreshTokenWallet, requestId, t])
 
   const renderStatus = () => {
     if (!order || order.status === 'pending') {
