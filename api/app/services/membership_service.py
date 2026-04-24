@@ -18,6 +18,7 @@ from app.crud.membership import (
     get_user_usage_stats,
     reset_daily_usage,
     update_daily_usage,
+    update_membership_plan,
 )
 from app.crud.membership import update_user_membership as crud_update_user_membership
 from app.crud.membership import (
@@ -27,6 +28,7 @@ from app.crud.membership import (
 from app.models.membership import MembershipPlan
 from app.schemas.membership import (
     MembershipPlanCreate,
+    MembershipPlanUpdate,
     MembershipStatus,
     MembershipType,
     UpgradeRequest,
@@ -99,9 +101,9 @@ class MembershipService:
         """获取免费用户状态"""
         # 免费用户默认配置
         free_config = {
-            "daily_message_limit": 100,
-            "daily_token_limit": 1000000,  # 100w tokens
-            "conversation_turn_limit": 10,
+            "daily_message_limit": settings.MEMBERSHIP_FREE_DAILY_MESSAGE_LIMIT,
+            "daily_token_limit": settings.MEMBERSHIP_FREE_DAILY_TOKEN_LIMIT,
+            "conversation_turn_limit": settings.MEMBERSHIP_FREE_CONVERSATION_TURN_LIMIT,
         }
 
         # 从数据库获取免费用户的实际使用情况
@@ -317,7 +319,22 @@ class MembershipService:
                 logger.info(f"{get_message('create_default_membership_plan')}: {plan_data['name']}")
                 logger.info(f"默认会员计划创建成功: {plan_data['name']}")
             else:
-                logger.info(f"默认会员计划已存在: {existing_plan.name}")
+                update_membership_plan(
+                    self.db,
+                    existing_plan.id,
+                    MembershipPlanUpdate(
+                        name=plan_data["name"],
+                        daily_message_limit=plan_data["daily_message_limit"],
+                        daily_token_limit=plan_data["daily_token_limit"],
+                        conversation_turn_limit=plan_data["conversation_turn_limit"],
+                        price=plan_data["price"],
+                        currency=plan_data["currency"],
+                        duration_days=plan_data["duration_days"],
+                        description=plan_data["description"],
+                        is_active=True,
+                    ),
+                )
+                logger.info(f"默认会员计划已同步: {existing_plan.name}")
 
     def get_membership_plans(self) -> list:
         """获取所有可用的会员计划"""

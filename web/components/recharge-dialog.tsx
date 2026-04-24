@@ -44,6 +44,7 @@ export default function RechargeDialog({ open: externalOpen, onOpenChange }: Rec
     tokenPackagesLoading,
     tokenTopupOrders,
     tokenTopupOrdersLoading,
+    refreshMembershipStatus,
     refreshTokenWallet,
     refreshTokenPackages,
     refreshTokenTopupOrders,
@@ -70,10 +71,11 @@ export default function RechargeDialog({ open: externalOpen, onOpenChange }: Rec
       return
     }
 
+    void refreshMembershipStatus()
     void refreshTokenWallet()
     void refreshTokenPackages()
     void refreshTokenTopupOrders()
-  }, [open, refreshTokenPackages, refreshTokenTopupOrders, refreshTokenWallet])
+  }, [open, refreshMembershipStatus, refreshTokenPackages, refreshTokenTopupOrders, refreshTokenWallet])
 
   const isLoading = tokenWalletLoading || tokenPackagesLoading
   const recentOrders = useMemo(() => tokenTopupOrders.slice(0, 5), [tokenTopupOrders])
@@ -186,7 +188,16 @@ export default function RechargeDialog({ open: externalOpen, onOpenChange }: Rec
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{t('billing.recentOrders')}</CardTitle>
-          <Button variant="outline" size="sm" onClick={() => void refreshTokenTopupOrders()} disabled={tokenTopupOrdersLoading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void refreshMembershipStatus()
+              void refreshTokenWallet()
+              void refreshTokenTopupOrders()
+            }}
+            disabled={tokenTopupOrdersLoading}
+          >
             {tokenTopupOrdersLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('common.actions.refresh')}
           </Button>
         </CardHeader>

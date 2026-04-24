@@ -58,15 +58,44 @@ def _extract_flow_usage(flow_data: list[dict[str, Any]]) -> Dict[str, int]:
     for item in flow_data:
         if not isinstance(item, dict):
             continue
-        tokens = item.get("tokens")
-        if tokens:
-            total_tokens += int(tokens)
+        total_tokens += _extract_token_count(item)
 
     return {
         "prompt_tokens": 0,
         "completion_tokens": 0,
         "total_tokens": total_tokens,
     }
+
+
+def _extract_token_count(item: Any) -> int:
+    if item is None:
+        return 0
+
+    if isinstance(item, (int, float)):
+        return int(item)
+
+    if isinstance(item, list):
+        return sum(_extract_token_count(child) for child in item)
+
+    if not isinstance(item, dict):
+        return 0
+
+    for key in ("tokens", "total_tokens", "totalTokens"):
+        value = item.get(key)
+        if isinstance(value, (int, float)):
+            return int(value)
+
+    nested_candidates = (
+        item.get("usage"),
+        item.get("responseData"),
+        item.get("flowResponses"),
+    )
+    for nested in nested_candidates:
+        token_count = _extract_token_count(nested)
+        if token_count > 0:
+            return token_count
+
+    return 0
 
 
 def _extract_content(data: dict[str, Any]) -> str:
@@ -124,8 +153,18 @@ async def create_fastgpt_response_stream(
                             final_usage_info = usage_info
                     continue
 
+                if current_event == "flowResponses" and isinstance(data.get("flowResponses"), list):
+                    usage_info = _extract_flow_usage(data["flowResponses"])
+                    if usage_info["total_tokens"] > 0:
+                        final_usage_info = usage_info
+
                 if current_event == "flowResponses" and isinstance(data.get("responseData"), list):
                     usage_info = _extract_flow_usage(data["responseData"])
+                    if usage_info["total_tokens"] > 0:
+                        final_usage_info = usage_info
+
+                if current_event == "flowResponses" and isinstance(data.get("responseData"), dict):
+                    usage_info = _extract_flow_usage([data["responseData"]])
                     if usage_info["total_tokens"] > 0:
                         final_usage_info = usage_info
 
