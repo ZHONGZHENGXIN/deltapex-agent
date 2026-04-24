@@ -16,7 +16,7 @@ def _build_messages(messages: list[MessageOut]) -> list[dict[str, str]]:
 
 def _build_payload(messages: list[MessageOut], agent: Agent, user_id: int, *, stream: bool) -> dict[str, Any]:
     model_conf = agent.model_conf or {}
-    return {
+    payload = {
         "model": model_conf.get("model", settings.AGENT_MODEL_NAME),
         "messages": _build_messages(messages),
         "temperature": model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
@@ -27,6 +27,10 @@ def _build_payload(messages: list[MessageOut], agent: Agent, user_id: int, *, st
         "stream": stream,
         "customUid": str(user_id),
     }
+    if stream:
+        # FastGPT returns detailed node usage in flowResponses only when detail=true.
+        payload["detail"] = True
+    return payload
 
 
 def _headers(agent: Agent) -> dict[str, str]:
@@ -46,6 +50,22 @@ def _extract_usage(data: dict[str, Any]) -> Dict[str, int]:
         "prompt_tokens": int(prompt_tokens or 0),
         "completion_tokens": int(completion_tokens or 0),
         "total_tokens": int(total_tokens or 0),
+    }
+
+
+def _extract_flow_usage(flow_data: list[dict[str, Any]]) -> Dict[str, int]:
+    total_tokens = 0
+    for item in flow_data:
+        if not isinstance(item, dict):
+            continue
+        tokens = item.get("tokens")
+        if tokens:
+            total_tokens += int(tokens)
+
+    return {
+        "prompt_tokens": 0,
+        "completion_tokens": 0,
+        "total_tokens": total_tokens,
     }
 
 
@@ -72,11 +92,16 @@ async def create_fastgpt_response_stream(
     async with httpx.AsyncClient(timeout=60.0) as client:
         async with client.stream("POST", agent.api_url, headers=_headers(agent), json=payload) as response:
             response.raise_for_status()
+            current_event = ""
             async for line in response.aiter_lines():
                 if not line:
                     continue
 
                 raw_line = line.strip()
+                if raw_line.startswith("event:"):
+                    current_event = raw_line[6:].strip()
+                    continue
+
                 if raw_line.startswith("data:"):
                     raw_line = raw_line[5:].strip()
 
@@ -86,6 +111,13 @@ async def create_fastgpt_response_stream(
                 try:
                     data = json.loads(raw_line)
                 except json.JSONDecodeError:
+                    continue
+
+                if isinstance(data, list):
+                    if current_event == "flowResponses":
+                        usage_info = _extract_flow_usage(data)
+                        if usage_info["total_tokens"] > 0:
+                            yield "", usage_info
                     continue
 
                 usage_info = _extract_usage(data)
