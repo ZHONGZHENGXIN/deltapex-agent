@@ -7,7 +7,7 @@ import { Send, Bot, User, Copy, RefreshCw, Loader2, FileText, Square } from 'luc
 import { Button } from '@/components/ui/button'
 import AIStreamText from '@/components/ai-stream-text'
 import { fetcher } from '@/util/fetcher'
-import { useMembershipStatus, refreshMembershipStatusGlobally } from '@/hooks/use-global-user-data'
+import { useGlobalUserData } from '@/hooks/use-global-user-data'
 import { useGlobalChatState } from '@/hooks/use-global-chat-state'
 import { useGlobalDataCache } from '@/hooks/use-global-data-cache'
 import type { Chat, Message, Agent } from '@/app/[locale]/types'
@@ -100,7 +100,12 @@ export default function ChatContentPage({
   const [error, setError] = useState<string | null>(null)
 
   // 获取会员状态
-  const { membershipStatus } = useMembershipStatus()
+  const {
+    membershipStatus,
+    tokenWallet,
+    refreshMembershipStatus,
+    refreshTokenWallet,
+  } = useGlobalUserData()
   
   // 获取全局对话状态
   const { 
@@ -127,6 +132,10 @@ export default function ChatContentPage({
   }
   const currentRounds = getCurrentRounds()
   const isMaxRoundsReached = currentRounds >= MAX_CHAT_ROUNDS
+  const paidTokenBalance = tokenWallet?.paid_token_balance || 0
+  const hasTokenCapacity = membershipStatus
+    ? membershipStatus.daily_token_remaining > 0 || paidTokenBalance > 0
+    : true
   
   // 检查当前聊天是否被全局对话锁阻塞
   const isBlockedByGlobalLock = !canSendMessage(chat.id)
@@ -137,12 +146,14 @@ export default function ChatContentPage({
 
   // 检查输入框是否应该被禁用（只在真正需要禁用时禁用）
   const isInputDisabled = isMaxRoundsReached || 
+                          !hasTokenCapacity ||
                           (isBlockedByGlobalLock && !shouldBypassLock)
   
   // 检查是否可以发送消息 - 考虑绕过逻辑
   const canSend = !isLoading && 
                   !isSending.current &&
                   !isMaxRoundsReached && 
+                  hasTokenCapacity &&
                   (!isBlockedByGlobalLock || shouldBypassLock) &&
                   input.trim().length > 2
 
@@ -214,6 +225,7 @@ export default function ChatContentPage({
     const canSendNow = !isLoading && 
                        !isSending.current &&
                        !isMaxRoundsReached && 
+                       hasTokenCapacity &&
                        !isBlockedByGlobalLock &&
                        messageContent.length > 2
     
@@ -308,7 +320,7 @@ export default function ChatContentPage({
       
       // 流式响应完成
       setCurrentStreamingIndex(-1)
-      refreshMembershipStatusGlobally()
+      await Promise.all([refreshMembershipStatus(), refreshTokenWallet()])
       
       // 如果获取到了 token 统计信息，立即更新消息显示
       if (tokenUsage) {
@@ -360,6 +372,8 @@ export default function ChatContentPage({
           window.dispatchEvent(new CustomEvent('open-recharge-dialog'))
         }
 
+        await Promise.all([refreshMembershipStatus(), refreshTokenWallet()])
+
         setError(errorMessage)
         setMessages(prev => {
           const newMsgs = [...prev]
@@ -376,7 +390,7 @@ export default function ChatContentPage({
       endChat()
       isSending.current = false
     }
-  }, [isLoading, isMaxRoundsReached, isBlockedByGlobalLock, chat.id, chat.title, messages.length, startChat, endChat, displayStreamingText, t, addMessageToChat, updateChatInCache])
+  }, [isLoading, isMaxRoundsReached, hasTokenCapacity, isBlockedByGlobalLock, chat.id, chat.title, messages.length, startChat, endChat, displayStreamingText, t, addMessageToChat, updateChatInCache, refreshMembershipStatus, refreshTokenWallet])
 
   // 处理初始消息自动发送
   useEffect(() => {
@@ -455,8 +469,9 @@ export default function ChatContentPage({
     endChat()
     isSending.current = false
     
-    refreshMembershipStatusGlobally()
-  }, [endChat])
+    void refreshMembershipStatus()
+    void refreshTokenWallet()
+  }, [endChat, refreshMembershipStatus, refreshTokenWallet])
 
   // 复制消息内容
   const handleCopy = useCallback(async (content: string) => {

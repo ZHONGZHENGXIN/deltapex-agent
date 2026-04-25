@@ -33,11 +33,19 @@ function PaymentSuccessContent() {
   const localePrefix = pathname.split('/').filter(Boolean)[0] === 'en' ? '/en' : '/zh'
   const hasCreemRedirectSignal = useMemo(
     () =>
-      ['order_id', 'customer_id', 'product_id', 'signature'].some((key) =>
-        Boolean(searchParams.get(key))
-      ),
+      ['order_id', 'customer_id', 'product_id', 'signature'].some((key) => Boolean(searchParams.get(key))),
     [searchParams]
   )
+
+  const findRecentOrder = (items: TokenTopupOrder[]) => {
+    const now = Date.now()
+    return (
+      items.find((item) => {
+        const createdAt = new Date(item.created_at).getTime()
+        return Number.isFinite(createdAt) && now - createdAt < 30 * 60 * 1000
+      }) || null
+    )
+  }
 
   useEffect(() => {
     const nextRequestId =
@@ -87,21 +95,20 @@ function PaymentSuccessContent() {
             order_number: orderNumber || undefined,
             limit: 1,
           })
-        } else if (hasCreemRedirectSignal) {
-          response = await getTokenTopupOrders({ limit: 5 })
         } else {
-          setError(t('billing.messages.missingOrderReference'))
-          setIsLoading(false)
-          return
+          response = await getTokenTopupOrders({ limit: 5 })
         }
 
         let currentOrder: TokenTopupOrder | null = response.items[0] ?? null
-        if (!currentOrder && hasCreemRedirectSignal && !requestId && !checkoutId && !orderNumber) {
-          currentOrder =
-            response.items.find((item) => {
-              const createdAt = new Date(item.created_at).getTime()
-              return Number.isFinite(createdAt) && Date.now() - createdAt < 30 * 60 * 1000
-            }) || null
+        if (!currentOrder) {
+          const recentFallback = await getTokenTopupOrders({ limit: 5 })
+          currentOrder = findRecentOrder(recentFallback.items)
+        }
+
+        if (!currentOrder && !requestId && !checkoutId && !orderNumber && !hasCreemRedirectSignal) {
+          setError(t('billing.messages.missingOrderReference'))
+          setIsLoading(false)
+          return
         }
 
         if (!cancelled) {

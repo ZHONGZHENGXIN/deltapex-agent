@@ -38,7 +38,7 @@ import {
 import ProfileDialog from '@/components/profile-dialog'
 import RechargeDialog from '@/components/recharge-dialog'
 import OrdersDialog from '@/components/orders-dialog'
-import { useMembershipStatus } from '@/hooks/use-global-user-data'
+import { useGlobalUserData } from '@/hooks/use-global-user-data'
 import { 
   getUserTypeText, 
   useUserStatus,
@@ -61,7 +61,14 @@ export function NavUser({
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false)
   const [profileDialogOpen, setProfileDialogOpen] = useState(false)
   const [ordersDialogOpen, setOrdersDialogOpen] = useState(false)
-  const { membershipStatus } = useMembershipStatus()
+  const { membershipStatus, tokenWallet } = useGlobalUserData()
+  const paidTokenBalance = tokenWallet?.paid_token_balance || 0
+  const totalUsableTokens = membershipStatus
+    ? membershipStatus.daily_token_count + membershipStatus.daily_token_remaining + paidTokenBalance
+    : 0
+  const isTokenExhausted = membershipStatus
+    ? membershipStatus.daily_token_remaining <= 0 && paidTokenBalance <= 0
+    : false
 
   // 监听打开订单弹框的事件
   useEffect(() => {
@@ -118,14 +125,14 @@ export function NavUser({
                     </div>
                     <div className="flex items-center gap-1">
                       <Zap className={`h-3 w-3 ${
-                        membershipStatus.daily_token_remaining <= 0 ? 'text-red-500' : ''
+                        isTokenExhausted ? 'text-red-500' : ''
                       }`} />
                       <span className={
-                        membershipStatus.daily_token_remaining <= 0 
+                        isTokenExhausted 
                           ? 'text-red-500 font-medium' 
                           : ''
                       }>
-                        {formatTokenCount(membershipStatus.daily_token_count)}/{formatTokenCount(membershipStatus.daily_token_limit)}
+                        {formatTokenCount(membershipStatus.daily_token_count)}/{formatTokenCount(totalUsableTokens)}
                       </span>
                     </div>
                   </div>

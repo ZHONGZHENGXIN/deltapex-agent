@@ -26,7 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import { useMembershipStatus } from '@/hooks/use-global-user-data'
+import { useGlobalUserData } from '@/hooks/use-global-user-data'
 import { 
   getUserTypeText, 
   useUserStatus,
@@ -49,13 +49,19 @@ export default function ProfileDialog({
 }: ProfileDialogProps) {
   const t = useTranslations()
   const { userType, isAdmin } = useUserStatus(user.email)
-  const { membershipStatus, refresh } = useMembershipStatus()
+  const {
+    membershipStatus,
+    tokenWallet,
+    refreshMembershipStatus,
+    refreshTokenWallet,
+  } = useGlobalUserData()
 
   useEffect(() => {
     if (open) {
-      void refresh()
+      void refreshMembershipStatus()
+      void refreshTokenWallet()
     }
-  }, [open, refresh])
+  }, [open, refreshMembershipStatus, refreshTokenWallet])
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -163,6 +169,18 @@ export default function ProfileDialog({
     if (limit === 0) return 0
     return Math.round((used / limit) * 100)
   }
+
+  const getProgressWidthPercentage = (used: number, limit: number) => {
+    return Math.min(100, getUsagePercentage(used, limit))
+  }
+
+  const paidTokenBalance = tokenWallet?.paid_token_balance || 0
+  const totalUsableTokens = membershipStatus
+    ? membershipStatus.daily_token_count + membershipStatus.daily_token_remaining + paidTokenBalance
+    : 0
+  const isTokenExhausted = membershipStatus
+    ? membershipStatus.daily_token_remaining <= 0 && paidTokenBalance <= 0
+    : false
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -293,7 +311,7 @@ export default function ProfileDialog({
                             membershipStatus.daily_message_remaining <= 0 ? 'bg-red-500' : 'bg-blue-500'
                           }`}
                           style={{ 
-                            width: `${getUsagePercentage(membershipStatus.daily_message_count, membershipStatus.daily_message_limit)}%` 
+                            width: `${getProgressWidthPercentage(membershipStatus.daily_message_count, membershipStatus.daily_message_limit)}%` 
                           }}
                         ></div>
                       </div>
@@ -304,23 +322,23 @@ export default function ProfileDialog({
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1">
                           <Zap className={`h-3 w-3 ${
-                            membershipStatus.daily_token_remaining <= 0 ? 'text-red-500' : 'text-red-600'
+                            isTokenExhausted ? 'text-red-500' : 'text-red-600'
                           }`} />
                           <span className="text-xs text-muted-foreground">{t('profile.todayTokens')}</span>
                         </div>
                         <span className={`text-xs font-medium ${
-                          membershipStatus.daily_token_remaining <= 0 ? 'text-red-500' : ''
+                          isTokenExhausted ? 'text-red-500' : ''
                         }`}>
-                          {formatTokenCount(membershipStatus.daily_token_count)} / {formatTokenCount(membershipStatus.daily_token_limit)}
+                          {formatTokenCount(membershipStatus.daily_token_count)} / {formatTokenCount(totalUsableTokens)} ({getUsagePercentage(membershipStatus.daily_token_count, totalUsableTokens)}%)
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-1.5 dark:bg-gray-700">
                         <div 
                           className={`h-1.5 rounded-full transition-all duration-300 ${
-                            membershipStatus.daily_token_remaining <= 0 ? 'bg-red-500' : 'bg-red-600'
+                            isTokenExhausted ? 'bg-red-500' : 'bg-red-600'
                           }`}
                           style={{ 
-                            width: `${getUsagePercentage(membershipStatus.daily_token_count, membershipStatus.daily_token_limit)}%` 
+                            width: `${getProgressWidthPercentage(membershipStatus.daily_token_count, totalUsableTokens)}%` 
                           }}
                         ></div>
                       </div>
