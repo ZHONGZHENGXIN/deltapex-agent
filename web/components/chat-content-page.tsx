@@ -87,6 +87,7 @@ export default function ChatContentPage({
   const abortController = useRef<AbortController | null>(null)
   const hasSent = useRef(false)
   const isSending = useRef(false)
+  const hasPromptedRecharge = useRef(false)
   
   // 状态管理 - 简化版本
   const [input, setInput] = useState('')
@@ -156,6 +157,23 @@ export default function ChatContentPage({
                   hasTokenCapacity &&
                   (!isBlockedByGlobalLock || shouldBypassLock) &&
                   input.trim().length > 2
+
+  useEffect(() => {
+    if (!membershipStatus) {
+      return
+    }
+
+    if (!hasTokenCapacity) {
+      setError(t('chat.limits.dailyTokenLimitReached'))
+      if (!hasPromptedRecharge.current) {
+        hasPromptedRecharge.current = true
+        window.dispatchEvent(new CustomEvent('open-recharge-dialog'))
+      }
+      return
+    }
+
+    hasPromptedRecharge.current = false
+  }, [hasTokenCapacity, membershipStatus, t])
 
 
   // 移除重复的全局锁定状态清理逻辑，已合并到下面的 useEffect 中
@@ -700,6 +718,24 @@ export default function ChatContentPage({
             </div>
           )}
 
+          {!hasTokenCapacity && (
+            <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                  {t('chat.limits.dailyTokenLimitReached')}
+                </span>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('open-recharge-dialog'))
+                  }}
+                >
+                  {t('billing.buttonText')}
+                </Button>
+              </div>
+            </div>
+          )}
+
           <textarea
             ref={textareaRef}
             className={`w-full text-lg rounded-md bg-background outline-none resize-none focus:ring-0 transition-opacity overflow-hidden ${
@@ -712,6 +748,8 @@ export default function ChatContentPage({
             placeholder={
               isBlockedByGlobalLock && !shouldBypassLock
                 ? lockStatusMessage || t('chat.limits.globalLockActive')
+                : !hasTokenCapacity
+                ? t('chat.limits.dailyTokenLimitReached')
                 : isMaxRoundsReached 
                 ? t('chat.limits.maxRoundsReached')
                 : isLoading 
