@@ -11,6 +11,7 @@ from app.models.message import Message
 from app.models.agent import Agent
 from app.models.membership import MembershipPlan, UserMembership
 from app.models.order import Order
+from app.models.memory import ChatSummary, StudentProfile
 from app.core.config import settings
 
 config = context.config

@@ -50,9 +50,19 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-re_1234}
       RESEND_MAIL_FROM: ${RESEND_MAIL_FROM:-onboarding@resend.dev}
       # 大模型与 Agent
-      AGENT_API_KEY: ${AGENT_API_KEY:-sk-proj-***}
+      AGENT_API_KEY: ${AGENT_API_KEY:-}
       AGENT_BASE_URL: ${AGENT_BASE_URL:-https://api.openai.ai/v1/chat/completions}
       AGENT_MODEL_NAME: ${AGENT_MODEL_NAME:-gpt-4.1-mini}
+      AGENT_CONTEXT_WINDOW_MESSAGES: ${AGENT_CONTEXT_WINDOW_MESSAGES:-20}
+      MEMORY_CONTEXT_ENABLED: ${MEMORY_CONTEXT_ENABLED:-true}
+      MEMORY_SUMMARY_TRIGGER_MESSAGES: ${MEMORY_SUMMARY_TRIGGER_MESSAGES:-30}
+      MEMORY_SUMMARY_BATCH_MESSAGES: ${MEMORY_SUMMARY_BATCH_MESSAGES:-10}
+      MEMORY_SUMMARY_MAX_CHARS: ${MEMORY_SUMMARY_MAX_CHARS:-4000}
+      MEMORY_PROFILE_MAX_CHARS: ${MEMORY_PROFILE_MAX_CHARS:-1500}
+      LLM_GATEWAY_ENABLED: ${LLM_GATEWAY_ENABLED:-true}
+      LLM_GATEWAY_BASE_URL: ${LLM_GATEWAY_BASE_URL:-http://one-api:3000/v1}
+      LLM_GATEWAY_API_KEY: ${LLM_GATEWAY_API_KEY:-}
+      LLM_GATEWAY_MODEL_NAME: ${LLM_GATEWAY_MODEL_NAME:-gpt-4.1-mini}
       # 会员与支付
       STRIPE_PUBLIC_KEY: ${STRIPE_PUBLIC_KEY:-pk_test_xxx}
       STRIPE_PRIVATE_KEY: ${STRIPE_PRIVATE_KEY:-sk_test_xxx}
@@ -88,6 +98,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_started
+      one-api:
         condition: service_started
     healthcheck:
       test: [ "CMD", "wget", "-qO-", "http://127.0.0.1:8000/health" ]
@@ -172,6 +184,21 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-123456} --save 60 1 --loglevel warning
     healthcheck:
       test: [ 'CMD', 'redis-cli', 'ping' ]
+    networks:
+      - bait-network
+
+  one-api:
+    container_name: bait-one-api
+    image: justsong/one-api:latest
+    restart: always
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      SESSION_SECRET: ${ONE_API_SESSION_SECRET:-change-me-before-production}
+      SQL_DSN: ${ONE_API_SQL_DSN:-}
+    ports:
+      - ${ONE_API_EXPOSE_PORT:-13000}:3000
+    volumes:
+      - $PWD/volumes/one-api/data:/data
     networks:
       - bait-network
 

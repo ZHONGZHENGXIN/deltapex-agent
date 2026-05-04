@@ -25,6 +25,14 @@
 - 每条 P0 建议独立 PR，人工 code review 后再合并。
 - 任何涉及真实 API key 的修复完成后，必须执行 key 轮换。
 
+## 暂时跳过 / 待人工清单
+
+| 项目 | 当前决定 | 恢复条件 | 备注 |
+|---|---|---|---|
+| P0-1 外部 provider key 轮换 | 暂时跳过 | 准备接真实学员或完成生产发布前 | FastGPT 等已暴露 key 需要在 provider 控制台重建、更新配置、撤销旧 key，并回填执行人和日期 |
+| P1-1 one-api 生产启用 | 暂时跳过，当前设置 `LLM_GATEWAY_ENABLED=false` | one-api 服务部署完成，并拿到 one-api token、渠道模型名、failover 验证证据 | 代码已支持 gateway；当前仍走旧 FastGPT 直连路径 |
+| P1-1 one-api channel/failover 验证 | 暂时跳过 | one-api Dashboard 中已配置 FastGPT channel 和备用 channel | 需要验证主 key 失效后聊天可自动切换或给出明确降级策略 |
+
 ## 风险到任务映射
 
 | 自查报告最高风险 | 对应任务 | 上线阻塞 |
@@ -303,7 +311,9 @@ Message 表只有 `chat_id`，没有 `user_id`。消息读取依赖 chat 入口�
 
 ### P1-1 接入 LLM Gateway
 
-**状态:** 未开始
+**状态:** 代码完成，待部署配置 one-api channel/token 并验证 failover
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，31 passed；`docker compose -f deploy/docker-compose.yaml config --quiet` 和 `docker compose -f deploy-test/docker-compose.yaml config --quiet` 通过。
+**范围说明:** 本次已将默认 LLM 路径接入 one-api；`source=llm` 的 Agent 会被强制归一为 gateway 引用。FastGPT/Dify 旧直连路径暂保留，Dify 学员侧禁用由 P1-2 处理。
 **默认决策:** 使用 one-api。
 **目标:** 业务代码不再直接持有 provider key，由 gateway 统一管理 key、路由、健康状态和 failover。
 
@@ -350,7 +360,8 @@ Message 表只有 `chat_id`，没有 `user_id`。消息读取依赖 chat 入口�
 
 ### P1-2 Dify 路径处理
 
-**状态:** 未开始
+**状态:** 完成
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_dify_student_disabled.py -q`，4 passed。
 **默认决策:** 学员侧禁用 Dify stateful session 路径。
 **目标:** tracoach 学员侧不依赖 provider `conversation_id` 保存长期记忆。
 
@@ -392,7 +403,8 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P1-3 流式窗口 bug 修复
 
-**状态:** 未开始
+**状态:** 完成
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_recent_message_window.py -q`，3 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，38 passed。
 **目标:** 流式 LLM 调用使用最近消息，而不是最早消息。
 
 **问题**
@@ -431,7 +443,9 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P1-4 长对话上下文管理
 
-**状态:** 未开始
+**状态:** 代码完成，待部署执行迁移
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_memory_context.py api/tests/test_p1_recent_message_window.py -q`，5 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，40 passed。
+**范围说明:** 已新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`、管理员内部查询接口和 provider 上下文组装。画像当前采用早期用户消息种子和结构化字段，后续可再接低成本模型做异步精炼。
 **目标:** 实现“最近 M 轮原文 + 历史滚动摘要 + 学员长期画像”的上下文结构。
 
 **问题**
@@ -742,10 +756,10 @@ P0 任务额外要求：
 | P0-3b Message 加 user_id | 代码完成，待部署执行迁移 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过 | 新增 `Message.user_id`、历史回填迁移、用户侧消息创建/读取/更新按 `user_id` 隔离；本地执行 Alembic 因 `localhost:5432` 未启动失败，生产需在 Zeabur 后端环境执行 |
 | P0-3c PostgreSQL RLS | 代码完成，待部署执行迁移 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过；Alembic head: `b20260504p03c` | Zeabur PostgreSQL 方案：新增 RLS migration，使用 `app.current_user_id/app.is_admin`，不使用 Supabase `auth.uid()`；本地执行 Alembic 因 `localhost:5432` 未启动失败，生产需在 Zeabur 后端环境执行 |
 | P0-3d 跨用户访问测试 | 完成 | pytest: `api/tests/test_cross_user_access.py` 5 passed；pytest: `api/tests` 22 passed | Alice 读取、发消息、更新、删除 Bob chat 均返回 404；列表不包含 Bob 内容；Bob 访问自己 chat 正常 |
-| P1-1 LLM Gateway 接入 | 未开始 |  | 默认 one-api |
-| P1-2 Dify 路径处理 | 未开始 |  | 默认学员侧禁用 Dify |
-| P1-3 流式窗口 bug 修复 | 未开始 |  |  |
-| P1-4 长对话上下文管理 | 未开始 |  |  |
+| P1-1 LLM Gateway 接入 | 代码完成，待部署配置 one-api channel/token 并验证 failover | pytest: `api/tests` 31 passed；compose config: `deploy`/`deploy-test` 通过 | 新增 one-api compose service；默认 Agent 改为 LLM/gateway；LLM 调用从 `LLM_GATEWAY_API_KEY/BASE_URL` 读取；LLM 类型 Agent 强制保存 gateway 引用而非 provider key |
+| P1-2 Dify 路径处理 | 完成 | pytest: `api/tests/test_p1_dify_student_disabled.py` 4 passed | 普通学员 active agents 不返回 Dify；直接创建 Dify chat 或向已有 Dify chat 发消息均返回 403；管理员仍可看到 Dify agent |
+| P1-3 流式窗口 bug 修复 | 完成 | pytest: `api/tests/test_p1_recent_message_window.py` 3 passed；pytest: `api/tests` 38 passed | LLM/FastGPT 统一使用最近 `AGENT_CONTEXT_WINDOW_MESSAGES` 条消息，默认 20 |
+| P1-4 长对话上下文管理 | 代码完成，待部署执行迁移 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
 | P1-5 学员级删除权 | 未开始 |  | 财务凭证保留期问 Alex/法务 |
 | P2-1 后端测试覆盖 | 未开始 |  |  |
 | P2-2 Trace 与结构化日志 | 未开始 |  |  |

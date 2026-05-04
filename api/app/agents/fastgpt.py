@@ -4,21 +4,29 @@ from typing import Any, AsyncIterator, Dict, Optional, Tuple
 
 import httpx
 
+from app.agents.context import MemoryContext, build_provider_messages
 from app.core.config import settings
 from app.core.i18n import get_message
 from app.models.agent import Agent
 from app.schemas.message import MessageOut
 
 
-def _build_messages(messages: list[MessageOut]) -> list[dict[str, str]]:
-    return [{"role": message.role, "content": message.content} for message in messages[:20]]
+def _build_messages(messages: list[MessageOut], memory_context: MemoryContext | None = None) -> list[dict[str, str]]:
+    return build_provider_messages(messages, memory_context=memory_context)
 
 
-def _build_payload(messages: list[MessageOut], agent: Agent, user_id: int, *, stream: bool) -> dict[str, Any]:
+def _build_payload(
+    messages: list[MessageOut],
+    agent: Agent,
+    user_id: int,
+    *,
+    stream: bool,
+    memory_context: MemoryContext | None = None,
+) -> dict[str, Any]:
     model_conf = agent.model_conf or {}
     payload = {
         "model": model_conf.get("model", settings.AGENT_MODEL_NAME),
-        "messages": _build_messages(messages),
+        "messages": _build_messages(messages, memory_context),
         "temperature": model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
         "max_tokens": model_conf.get("max_tokens", 2000),
         "top_p": model_conf.get("top_p", 1.0),
@@ -109,8 +117,13 @@ def _extract_content(data: dict[str, Any]) -> str:
     return data.get("text") or data.get("content") or ""
 
 
-async def create_fastgpt_response(messages: list[MessageOut], agent: Agent, user_id: int) -> Tuple[str, Dict[str, int]]:
-    payload = _build_payload(messages, agent, user_id, stream=False)
+async def create_fastgpt_response(
+    messages: list[MessageOut],
+    agent: Agent,
+    user_id: int,
+    memory_context: MemoryContext | None = None,
+) -> Tuple[str, Dict[str, int]]:
+    payload = _build_payload(messages, agent, user_id, stream=False, memory_context=memory_context)
     async with httpx.AsyncClient(timeout=60.0) as client:
         response = await client.post(agent.api_url, headers=_headers(agent), json=payload)
         response.raise_for_status()
@@ -120,9 +133,12 @@ async def create_fastgpt_response(messages: list[MessageOut], agent: Agent, user
 
 
 async def create_fastgpt_response_stream(
-    messages: list[MessageOut], agent: Agent, user_id: int
+    messages: list[MessageOut],
+    agent: Agent,
+    user_id: int,
+    memory_context: MemoryContext | None = None,
 ) -> AsyncIterator[Tuple[str, Optional[Dict[str, int]]]]:
-    payload = _build_payload(messages, agent, user_id, stream=True)
+    payload = _build_payload(messages, agent, user_id, stream=True, memory_context=memory_context)
     async with httpx.AsyncClient(timeout=60.0) as client:
         async with client.stream("POST", agent.api_url, headers=_headers(agent), json=payload) as response:
             response.raise_for_status()

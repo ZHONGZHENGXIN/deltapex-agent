@@ -5,6 +5,7 @@ from typing import Dict, Optional, Tuple, Union
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
+from app.agents.context import MemoryContext
 from app.agents.dify import create_dify_response, create_dify_response_stream, test_dify_connection
 from app.agents.fastgpt import create_fastgpt_response, create_fastgpt_response_stream, test_fastgpt_connection
 from app.agents.llm import create_llm_response, create_llm_response_stream, estimate_conversation_tokens, test_agent_connection
@@ -17,10 +18,12 @@ from app.db.base import get_session
 from app.db.rls import set_rls_context
 from app.dependencies.db import LangDep, SessionDep, UserDep
 from app.models.agent import Agent, AgentSource
+from app.models.user import User, UserType
 from app.schemas.agent import AgentPublic
 from app.schemas.chat import ChatCreate, ChatOut, ChatUpdate
 from app.schemas.message import MessageCreate, MessageOut, MessageRole, UserMessageCreate
 from app.services.billing_service import BillingService
+from app.services.memory_service import MemoryService
 from app.services.membership_service import MembershipService
 
 chat_router = APIRouter(prefix="/chat")
@@ -75,27 +78,39 @@ def ensure_message_logging(func):
 
 
 async def create_agent_response(
-    messages: list[MessageOut], agent: Agent, user_id: int, chat_id: int, session=None
+    messages: list[MessageOut],
+    agent: Agent,
+    user_id: int,
+    chat_id: int,
+    session=None,
+    memory_context: MemoryContext | None = None,
 ) -> Tuple[str, Dict[str, int]]:
     if agent.source == AgentSource.DIFY:
         return await create_dify_response(messages, agent, user_id, chat_id, session)
     if agent.source == AgentSource.FASTGPT:
-        return await create_fastgpt_response(messages, agent, user_id)
-    return create_llm_response(messages, agent)
+        return await create_fastgpt_response(messages, agent, user_id, memory_context)
+    return create_llm_response(messages, agent, memory_context)
 
 
-async def create_agent_response_stream(messages: list[MessageOut], agent: Agent, user_id: int, chat_id: int, session=None):
+async def create_agent_response_stream(
+    messages: list[MessageOut],
+    agent: Agent,
+    user_id: int,
+    chat_id: int,
+    session=None,
+    memory_context: MemoryContext | None = None,
+):
     if agent.source == AgentSource.DIFY:
         async for chunk_data in create_dify_response_stream(messages, agent, user_id, chat_id, session):
             yield chunk_data
         return
 
     if agent.source == AgentSource.FASTGPT:
-        async for chunk_data in create_fastgpt_response_stream(messages, agent, user_id):
+        async for chunk_data in create_fastgpt_response_stream(messages, agent, user_id, memory_context):
             yield chunk_data
         return
 
-    async for chunk_data in create_llm_response_stream(messages, agent):
+    async for chunk_data in create_llm_response_stream(messages, agent, memory_context):
         yield chunk_data
 
 
@@ -105,6 +120,15 @@ async def test_agent_connection_unified(agent: Agent):
     if agent.source == AgentSource.FASTGPT:
         return await test_fastgpt_connection(agent)
     return await test_agent_connection(agent)
+
+
+def is_student_side_user(user: User) -> bool:
+    return user.user_type != UserType.ADMIN
+
+
+def ensure_student_agent_allowed(agent: Agent, user: User, lang: str) -> None:
+    if is_student_side_user(user) and agent.source == AgentSource.DIFY:
+        raise HTTPException(status_code=403, detail=get_message("agent_not_found_or_inactive", lang))
 
 
 def _calculate_paid_tokens(total_tokens: int, remaining_free_tokens_before_request: int) -> int:
@@ -118,6 +142,7 @@ async def create_chat_api(chat_in: ChatCreate, session: SessionDep, user: UserDe
         agent = get_agent_detail(session, chat_in.agent_id)
         if not agent or agent.is_deleted:
             raise HTTPException(status_code=404, detail=get_message("agent_not_found_or_inactive", lang))
+        ensure_student_agent_allowed(agent, user, lang)
     else:
         raise HTTPException(status_code=404, detail=get_message("agent_not_found", lang))
 
@@ -145,6 +170,15 @@ async def create_chat_message_api(
         raise HTTPException(status_code=404, detail=get_message("chat_access_denied", lang))
 
     internal_chat_id = chat.id
+
+    if not chat.agent_id:
+        raise HTTPException(status_code=404, detail=get_message("agent_not_found", lang))
+
+    agent = get_agent_detail(session, chat.agent_id)
+    if not agent or agent.is_deleted:
+        raise HTTPException(status_code=404, detail=get_message("agent_not_found", lang))
+    ensure_student_agent_allowed(agent, user, lang)
+
     history = get_all_messages(internal_chat_id, user_id, session)
     messages = [message_to_out(message, public_chat_id) for message in history]
     estimated_tokens = estimate_conversation_tokens(messages, message_in.content)
@@ -183,18 +217,23 @@ async def create_chat_message_api(
     user_message_out = message_to_out(user_message, public_chat_id)
     messages.append(user_message_out)
     MessageLogger.log_user_message_saved(user_message.id, public_chat_id)
-
-    if not chat.agent_id:
-        raise HTTPException(status_code=404, detail=get_message("agent_not_found", lang))
-
-    agent = get_agent_detail(session, chat.agent_id)
-    if not agent or agent.is_deleted:
-        raise HTTPException(status_code=404, detail=get_message("agent_not_found", lang))
+    memory_context = MemoryService(session).prepare_memory_context(
+        user_id=user_id,
+        chat_id=internal_chat_id,
+        messages=messages,
+    )
 
     if not stream:
         MessageLogger.log_ai_response_start(chat.agent_id, False)
         try:
-            llm_response_content, usage_info = await create_agent_response(messages, agent, user_id, internal_chat_id, session)
+            llm_response_content, usage_info = await create_agent_response(
+                messages,
+                agent,
+                user_id,
+                internal_chat_id,
+                session,
+                memory_context,
+            )
             assistant_message = create_message(
                 MessageCreate(
                     chat_id=internal_chat_id,
@@ -246,7 +285,14 @@ async def create_chat_message_api(
                 message_id = assistant_message.id
                 temp_session.commit()
 
-            async for chunk, usage_info in create_agent_response_stream(messages, agent, user_id, internal_chat_id, None):
+            async for chunk, usage_info in create_agent_response_stream(
+                messages,
+                agent,
+                user_id,
+                internal_chat_id,
+                None,
+                memory_context,
+            ):
                 if chunk:
                     content_acc += chunk
                     chunk_count += 1
@@ -333,6 +379,8 @@ def get_all_chats_api(
 @chat_router.get("/agents/active", response_model=list[AgentPublic])
 def get_active_agents_api(session: SessionDep, user: UserDep, lang: LangDep) -> list[AgentPublic]:
     agents = get_active_agents(session)
+    if is_student_side_user(user):
+        agents = [agent for agent in agents if agent.source != AgentSource.DIFY]
     return [AgentPublic.model_validate(agent) for agent in agents]
 
 

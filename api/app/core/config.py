@@ -147,6 +147,19 @@ class Settings:
     )
     AGENT_MODEL_NAME: str = _get_env("AGENT_MODEL_NAME", default="fastgpt") or "fastgpt"
     AGENT_MODEL_TEMPERATURE: float = _get_float_env("AGENT_MODEL_TEMPERATURE", default=0.7)
+    AGENT_CONTEXT_WINDOW_MESSAGES: int = _get_int_env("AGENT_CONTEXT_WINDOW_MESSAGES", default=20)
+    MEMORY_CONTEXT_ENABLED: bool = _get_bool_env("MEMORY_CONTEXT_ENABLED", default=True)
+    MEMORY_SUMMARY_TRIGGER_MESSAGES: int = _get_int_env("MEMORY_SUMMARY_TRIGGER_MESSAGES", default=30)
+    MEMORY_SUMMARY_BATCH_MESSAGES: int = _get_int_env("MEMORY_SUMMARY_BATCH_MESSAGES", default=10)
+    MEMORY_SUMMARY_MAX_CHARS: int = _get_int_env("MEMORY_SUMMARY_MAX_CHARS", default=4000)
+    MEMORY_PROFILE_MAX_CHARS: int = _get_int_env("MEMORY_PROFILE_MAX_CHARS", default=1500)
+    LLM_GATEWAY_ENABLED: bool = _get_bool_env("LLM_GATEWAY_ENABLED", "ONE_API_ENABLED", default=True)
+    LLM_GATEWAY_BASE_URL: str = (
+        _get_env("LLM_GATEWAY_BASE_URL", "ONE_API_BASE_URL", default="http://one-api:3000/v1")
+        or "http://one-api:3000/v1"
+    )
+    LLM_GATEWAY_API_KEY: str | None = _get_env("LLM_GATEWAY_API_KEY", "ONE_API_API_KEY", "ONE_API_TOKEN")
+    LLM_GATEWAY_MODEL_NAME: str | None = _get_env("LLM_GATEWAY_MODEL_NAME", "ONE_API_MODEL_NAME")
 
     STRIPE_PUBLIC_KEY: str | None = _get_env("STRIPE_PUBLIC_KEY")
     STRIPE_PRIVATE_KEY: str | None = _get_env("STRIPE_PRIVATE_KEY")

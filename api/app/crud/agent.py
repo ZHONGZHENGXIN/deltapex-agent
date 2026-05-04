@@ -11,6 +11,70 @@ from app.schemas.agent import AgentActionRequest, AgentCreate, AgentList, AgentL
 logger = get_logger(__name__)
 
 DEFAULT_AGENT_NAME = "Default Assistant"
+GATEWAY_API_KEY_PLACEHOLDER = "__env:LLM_GATEWAY_API_KEY__"
+
+
+def _default_model_conf() -> dict:
+    return {
+        "model": settings.LLM_GATEWAY_MODEL_NAME or settings.AGENT_MODEL_NAME,
+        "temperature": settings.AGENT_MODEL_TEMPERATURE,
+        "max_tokens": 2048,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+    }
+
+
+def _default_agent_values() -> dict:
+    if settings.LLM_GATEWAY_ENABLED:
+        return {
+            "source": AgentSource.LLM,
+            "api_url": settings.LLM_GATEWAY_BASE_URL,
+            "api_key": GATEWAY_API_KEY_PLACEHOLDER,
+            "model_conf": _default_model_conf(),
+        }
+
+    return {
+        "source": AgentSource.FASTGPT,
+        "api_url": settings.AGENT_BASE_URL,
+        "api_key": settings.AGENT_API_KEY or "",
+        "model_conf": _default_model_conf(),
+    }
+
+
+def _apply_gateway_reference(payload: dict, source: AgentSource, *, ensure_model_conf: bool = False) -> dict:
+    if not settings.LLM_GATEWAY_ENABLED or source != AgentSource.LLM:
+        return payload
+
+    normalized = dict(payload)
+    normalized["api_url"] = settings.LLM_GATEWAY_BASE_URL
+    normalized["api_key"] = GATEWAY_API_KEY_PLACEHOLDER
+    if ensure_model_conf and not normalized.get("model_conf"):
+        normalized["model_conf"] = _default_model_conf()
+    return normalized
+
+
+def enforce_llm_gateway_references(session: Session) -> int:
+    if not settings.LLM_GATEWAY_ENABLED:
+        return 0
+
+    agents = session.exec(select(Agent).where(Agent.source == AgentSource.LLM)).all()
+    updated_count = 0
+    for agent in agents:
+        if agent.api_url == settings.LLM_GATEWAY_BASE_URL and agent.api_key == GATEWAY_API_KEY_PLACEHOLDER:
+            continue
+
+        agent.api_url = settings.LLM_GATEWAY_BASE_URL
+        agent.api_key = GATEWAY_API_KEY_PLACEHOLDER
+        agent.updated_at = datetime.utcnow()
+        session.add(agent)
+        updated_count += 1
+
+    if updated_count:
+        session.commit()
+        logger.info("Migrated %s LLM agents to gateway references", updated_count)
+
+    return updated_count
 
 
 def get_agents_with_pagination(session: Session, params: AgentSearchParams) -> AgentListResponse:
@@ -58,7 +122,9 @@ def get_agent_detail(session: Session, agent_id: int) -> Optional[Agent]:
 
 
 def create_agent(session: Session, agent_data: AgentCreate) -> Agent:
-    agent = Agent(**agent_data.model_dump())
+    payload = agent_data.model_dump()
+    payload = _apply_gateway_reference(payload, payload["source"], ensure_model_conf=True)
+    agent = Agent(**payload)
     session.add(agent)
     session.commit()
     session.refresh(agent)
@@ -70,7 +136,15 @@ def update_agent(session: Session, agent_id: int, agent_data: AgentUpdate) -> Op
     if not agent:
         return None
 
-    for key, value in agent_data.model_dump(exclude_unset=True).items():
+    payload = agent_data.model_dump(exclude_unset=True)
+    target_source = payload.get("source", agent.source)
+    payload = _apply_gateway_reference(
+        payload,
+        target_source,
+        ensure_model_conf=(payload.get("source") == AgentSource.LLM and agent.source != AgentSource.LLM),
+    )
+
+    for key, value in payload.items():
         setattr(agent, key, value)
 
     agent.updated_at = datetime.utcnow()
@@ -106,26 +180,35 @@ def get_active_agents(session: Session) -> List[Agent]:
 
 
 def create_default_agent(session: Session) -> Agent:
+    values = _default_agent_values()
+    enforce_llm_gateway_references(session)
     existing_agent = session.exec(select(Agent).where(Agent.name == DEFAULT_AGENT_NAME, Agent.is_deleted == False)).first()
     if existing_agent:
+        if settings.LLM_GATEWAY_ENABLED and (
+            existing_agent.source != AgentSource.LLM
+            or existing_agent.api_url != values["api_url"]
+            or existing_agent.api_key != values["api_key"]
+        ):
+            existing_agent.source = values["source"]
+            existing_agent.api_url = values["api_url"]
+            existing_agent.api_key = values["api_key"]
+            existing_agent.model_conf = values["model_conf"]
+            existing_agent.updated_at = datetime.utcnow()
+            session.add(existing_agent)
+            session.commit()
+            session.refresh(existing_agent)
+            logger.info("Migrated default assistant to LLM gateway: %s", existing_agent.name)
+            return existing_agent
+
         logger.info("Default assistant already exists: %s", existing_agent.name)
         return existing_agent
 
-    default_model_conf = {
-        "model": settings.AGENT_MODEL_NAME,
-        "temperature": settings.AGENT_MODEL_TEMPERATURE,
-        "max_tokens": 2048,
-        "top_p": 1.0,
-        "frequency_penalty": 0.0,
-        "presence_penalty": 0.0,
-    }
-
     default_agent = Agent(
         name=DEFAULT_AGENT_NAME,
-        source=AgentSource.FASTGPT,
-        api_url=settings.AGENT_BASE_URL,
-        api_key=settings.AGENT_API_KEY,
-        model_conf=default_model_conf,
+        source=values["source"],
+        api_url=values["api_url"],
+        api_key=values["api_key"],
+        model_conf=values["model_conf"],
         is_think=False,
         is_stream=True,
         is_deleted=False,

@@ -8,7 +8,7 @@ from app.models.agent import AgentSource
 
 class AgentBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="Agent name")
-    source: AgentSource = Field(default=AgentSource.FASTGPT, description="Agent source")
+    source: AgentSource = Field(default=AgentSource.LLM, description="Agent source")
     api_url: str = Field(..., description="API URL")
     api_key: str = Field(..., min_length=1, description="API key")
     model_conf: Optional[Dict[str, Any]] = Field(default=None, description="Model configuration JSON")

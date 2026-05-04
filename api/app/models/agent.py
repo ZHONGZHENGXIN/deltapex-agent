@@ -17,7 +17,7 @@ class Agent(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
 
     name: str = Field(index=True, description="AI assistant name")
-    source: AgentSource = Field(default=AgentSource.FASTGPT, description="AI assistant source type")
+    source: AgentSource = Field(default=AgentSource.LLM, description="AI assistant source type")
     api_url: str = Field(description="API endpoint URL")
     api_key: str = Field(description="API key")
     model_conf: Optional[Dict[str, Any]] = Field(default=None, sa_type=JSON, description="Model configuration")

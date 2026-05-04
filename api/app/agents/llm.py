@@ -1,13 +1,75 @@
 import asyncio
 import time
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Dict, Optional, Tuple
 
 from openai import OpenAI, AsyncOpenAI
 
+from app.agents.context import MemoryContext, build_provider_messages
 from app.core.config import settings
 from app.core.i18n import get_message
 from app.models.agent import Agent
 from app.schemas.message import MessageOut
+
+
+@dataclass(frozen=True)
+class LLMClientConfig:
+    api_key: str
+    base_url: str
+    model: str
+    model_conf: Dict[str, Any]
+    gateway_enabled: bool
+
+
+def normalize_openai_base_url(api_url: str) -> str:
+    base_url = api_url.rstrip("/")
+    if base_url.endswith("/chat/completions"):
+        base_url = base_url[: -len("/chat/completions")]
+    return base_url.rstrip("/")
+
+
+def build_llm_client_config(agent: Optional[Agent]) -> LLMClientConfig:
+    model_conf = dict(agent.model_conf or {}) if agent else {}
+
+    if settings.LLM_GATEWAY_ENABLED:
+        if not settings.LLM_GATEWAY_API_KEY:
+            raise RuntimeError("LLM_GATEWAY_API_KEY is required when LLM_GATEWAY_ENABLED=true")
+
+        model = settings.LLM_GATEWAY_MODEL_NAME or model_conf.get("model") or settings.AGENT_MODEL_NAME
+        return LLMClientConfig(
+            api_key=settings.LLM_GATEWAY_API_KEY,
+            base_url=normalize_openai_base_url(settings.LLM_GATEWAY_BASE_URL),
+            model=model,
+            model_conf=model_conf,
+            gateway_enabled=True,
+        )
+
+    if not agent:
+        raise RuntimeError("agent is required when LLM_GATEWAY_ENABLED=false")
+
+    model = model_conf.get("model", settings.AGENT_MODEL_NAME)
+    return LLMClientConfig(
+        api_key=agent.api_key,
+        base_url=normalize_openai_base_url(agent.api_url),
+        model=model,
+        model_conf=model_conf,
+        gateway_enabled=False,
+    )
+
+
+def build_chat_params(messages: list[dict[str, str]], config: LLMClientConfig, *, stream: bool = False) -> Dict[str, Any]:
+    params: Dict[str, Any] = {
+        "model": config.model,
+        "messages": messages,
+        "temperature": config.model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
+        "max_tokens": config.model_conf.get("max_tokens", 2000),
+        "top_p": config.model_conf.get("top_p", 1.0),
+        "frequency_penalty": config.model_conf.get("frequency_penalty", 0.0),
+        "presence_penalty": config.model_conf.get("presence_penalty", 0.0),
+    }
+    if stream:
+        params["stream"] = True
+    return params
 
 
 def estimate_tokens(text: str) -> int:
@@ -77,25 +139,14 @@ def estimate_conversation_tokens(messages: list[MessageOut], new_message_content
     return total_tokens
 
 
-def create_llm_response(messages: list[MessageOut], agent: Optional[Agent] = None) -> Tuple[str, Dict[str, int]]:
-    _messages = []
-    for message in messages:
-        _messages.append({"role": message.role, "content": message.content})
-
-    # Use agent configuration if provided
-    client = OpenAI(api_key=agent.api_key, base_url=agent.api_url.replace("/chat/completions", ""))
-    model_conf = agent.model_conf or {}
-    model = model_conf.get("model", settings.AGENT_MODEL_NAME)
-    # Extract other parameters from model_conf
-    params = {
-        "model": model,
-        "messages": _messages,
-        "temperature": model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
-        "max_tokens": model_conf.get("max_tokens", 2000),
-        "top_p": model_conf.get("top_p", 1.0),
-        "frequency_penalty": model_conf.get("frequency_penalty", 0.0),
-        "presence_penalty": model_conf.get("presence_penalty", 0.0),
-    }
+def create_llm_response(
+    messages: list[MessageOut],
+    agent: Optional[Agent] = None,
+    memory_context: MemoryContext | None = None,
+) -> Tuple[str, Dict[str, int]]:
+    config = build_llm_client_config(agent)
+    client = OpenAI(api_key=config.api_key, base_url=config.base_url)
+    params = build_chat_params(build_provider_messages(messages, memory_context=memory_context), config)
     response = client.chat.completions.create(**params)
     
     # 提取真实的 token 使用统计
@@ -108,7 +159,11 @@ def create_llm_response(messages: list[MessageOut], agent: Optional[Agent] = Non
     return response.choices[0].message.content, usage_info
 
 
-async def create_llm_response_stream(messages: list[MessageOut], agent: Optional[Agent] = None) -> AsyncIterator[Tuple[str, Optional[Dict[str, int]]]]:
+async def create_llm_response_stream(
+    messages: list[MessageOut],
+    agent: Optional[Agent] = None,
+    memory_context: MemoryContext | None = None,
+) -> AsyncIterator[Tuple[str, Optional[Dict[str, int]]]]:
     """
     创建 LLM 流式响应（异步版本）
     
@@ -124,25 +179,9 @@ async def create_llm_response_stream(messages: list[MessageOut], agent: Optional
     返回:
     - AsyncIterator[Tuple[str, Optional[Dict[str, int]]]]: 异步生成器，逐块返回响应内容和 token 统计（仅在最后一个 chunk 中包含）
     """
-    _messages = []
-    # only use first 20 messages
-    for message in messages[:20]:
-        _messages.append({"role": message.role, "content": message.content})
-
-    client = AsyncOpenAI(api_key=agent.api_key, base_url=agent.api_url.replace("/chat/completions", ""))
-    model_conf = agent.model_conf or {}
-    model = model_conf.get("model", settings.AGENT_MODEL_NAME)
-    # Extract other parameters from model_conf
-    params = {
-        "model": model,
-        "messages": _messages,
-        "temperature": model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
-        "max_tokens": model_conf.get("max_tokens", 2000),
-        "top_p": model_conf.get("top_p", 1.0),
-        "frequency_penalty": model_conf.get("frequency_penalty", 0.0),
-        "presence_penalty": model_conf.get("presence_penalty", 0.0),
-        "stream": True,
-    }
+    config = build_llm_client_config(agent)
+    client = AsyncOpenAI(api_key=config.api_key, base_url=config.base_url)
+    params = build_chat_params(build_provider_messages(messages, memory_context=memory_context), config, stream=True)
     
     # 使用异步流式处理
     stream = await client.chat.completions.create(**params)
@@ -170,29 +209,17 @@ async def test_agent_connection(agent: Agent) -> Dict[str, Any]:
     start_time = time.time()
 
     try:
+        config = build_llm_client_config(agent)
         # 创建测试消息
         test_messages = [{"role": "user", "content": "hi"}]
 
         # 根据 Agent 配置创建客户端
         client = OpenAI(
-            api_key=agent.api_key,
-            base_url=agent.api_url.replace("/chat/completions", ""),
+            api_key=config.api_key,
+            base_url=config.base_url,
         )
-
-        # 获取模型配置
-        model_conf = agent.model_conf or {}
-        model = model_conf.get("model", settings.AGENT_MODEL_NAME)
-
-        # 构建请求参数
-        params = {
-            "model": model,
-            "messages": test_messages,
-            "temperature": model_conf.get("temperature", settings.AGENT_MODEL_TEMPERATURE),
-            "max_tokens": min(model_conf.get("max_tokens", 100), 100),  # 限制测试时的 token 数量
-            "top_p": model_conf.get("top_p", 1.0),
-            "frequency_penalty": model_conf.get("frequency_penalty", 0.0),
-            "presence_penalty": model_conf.get("presence_penalty", 0.0),
-        }
+        params = build_chat_params(test_messages, config)
+        params["max_tokens"] = min(config.model_conf.get("max_tokens", 100), 100)
 
         # 执行测试请求
         def sync_test():
@@ -260,8 +287,8 @@ async def test_agent_connection(agent: Agent) -> Dict[str, Any]:
                 "error_type": type(e).__name__,
                 "error_message": error_message,
                 "agent_config": {
-                    "api_url": agent.api_url,
-                    "model": (model_conf.get("model", settings.AGENT_MODEL_NAME) if model_conf else settings.AGENT_MODEL_NAME),
+                    "gateway_enabled": settings.LLM_GATEWAY_ENABLED,
+                    "model": config.model if "config" in locals() else settings.AGENT_MODEL_NAME,
                 },
             },
         }

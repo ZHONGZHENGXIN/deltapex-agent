@@ -43,6 +43,7 @@ from app.schemas.agent import (
     AgentUpdate,
 )
 from app.schemas.membership import MembershipType
+from app.services.memory_service import MemoryService
 
 admin_router = APIRouter(prefix="/admin")
 
@@ -132,6 +133,22 @@ def get_user(
         error_msg = get_message("user_not_found", lang)
         raise HTTPException(status_code=404, detail=error_msg)
     return user
+
+
+@admin_router.get("/users/{user_id}/memory")
+def get_user_memory(
+    user_id: int,
+    *,
+    session: SessionDep,
+    lang: LangDep,
+    admin_user: User = Depends(verify_admin_user),
+):
+    """获取学员长期画像和对话摘要"""
+    user = get_user_detail(session, user_id)
+    if not user:
+        error_msg = get_message("user_not_found", lang)
+        raise HTTPException(status_code=404, detail=error_msg)
+    return MemoryService(session).get_student_memory_snapshot(user_id)
 
 
 @admin_router.put("/users/{user_id}")
