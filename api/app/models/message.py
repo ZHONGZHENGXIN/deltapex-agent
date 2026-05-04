@@ -11,6 +11,7 @@ class Message(SQLModel, table=True):
 
     # 基础信息
     chat_id: int = Field(description="关联的对话ID")
+    user_id: int = Field(index=True, description="消息所属用户ID")
     content: str = Field(description="消息内容")
     model_conf: str = Field(default_factory=dict, sa_column=Column(JSON), description="模型配置参数")
     role: MessageRole = Field(description="消息角色：user/assistant/system")

@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import uuid4
 from typing import Any, Dict, Optional
 
 from sqlmodel import JSON, Field, SQLModel
@@ -6,6 +7,7 @@ from sqlmodel import JSON, Field, SQLModel
 
 class Chat(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
+    public_id: str = Field(default_factory=lambda: str(uuid4()), index=True, unique=True, description="Public UUID")
 
     # 基础信息
     user_id: int = Field(description="用户ID")

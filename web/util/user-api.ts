@@ -166,7 +166,7 @@ export async function getMembershipPlans(): Promise<{ items: MembershipPlan[], t
 /**
  * 检查使用限制
  */
-export async function checkUsageLimits(chatId: number): Promise<UsageLimitCheck> {
+export async function checkUsageLimits(chatId: string): Promise<UsageLimitCheck> {
   try {
     const response = await fetcher(`/membership/check-limits/${chatId}`, {
       method: 'GET',
@@ -182,7 +182,7 @@ export async function checkUsageLimits(chatId: number): Promise<UsageLimitCheck>
 /**
  * 记录使用情况
  */
-export async function recordUsage(chatId: number, messageCount: number = 1, tokenCount: number = 0): Promise<{ success: boolean, message: string }> {
+export async function recordUsage(chatId: string, messageCount: number = 1, tokenCount: number = 0): Promise<{ success: boolean, message: string }> {
   try {
     const response = await fetcher(`/membership/record-usage/${chatId}?message_count=${messageCount}&token_count=${tokenCount}`, {
       method: 'POST',

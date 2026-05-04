@@ -27,7 +27,7 @@ interface Agent {
   name: string;
   source: 'llm' | 'dify' | 'fastgpt' | 'coze' | 'custom';
   api_url: string;
-  api_key: string;
+  api_key_set: boolean;
   model_conf?: Record<string, unknown> | null;
   is_think: boolean;
   is_stream: boolean;
@@ -50,7 +50,7 @@ interface AgentUpdateRequest {
   name: string;
   source: 'llm' | 'dify' | 'fastgpt' | 'coze' | 'custom';
   api_url: string;
-  api_key: string;
+  api_key?: string;
   model_conf?: Record<string, unknown> | null;
   is_think: boolean;
   is_stream: boolean;
@@ -83,14 +83,20 @@ function AgentRow({ agent, onUpdate, onDelete, onEdit, onCreate, showCreateButto
     name: agent.name,
     source: agent.source,
     api_url: agent.api_url,
-    api_key: agent.api_key,
+    api_key: '',
     model_conf: agent.model_conf,
     is_think: agent.is_think,
     is_stream: agent.is_stream,
   });
 
   const handleSave = () => {
-    onUpdate(agent.id, editData);
+    const updates = { ...editData };
+    if (!updates.api_key?.trim()) {
+      delete updates.api_key;
+    } else {
+      updates.api_key = updates.api_key.trim();
+    }
+    onUpdate(agent.id, updates);
     setIsEditing(false);
   };
 
@@ -99,7 +105,7 @@ function AgentRow({ agent, onUpdate, onDelete, onEdit, onCreate, showCreateButto
       name: agent.name,
       source: agent.source,
       api_url: agent.api_url,
-      api_key: agent.api_key,
+      api_key: '',
       model_conf: agent.model_conf,
       is_think: agent.is_think,
       is_stream: agent.is_stream,
@@ -126,11 +132,6 @@ function AgentRow({ agent, onUpdate, onDelete, onEdit, onCreate, showCreateButto
       default:
         return source;
     }
-  };
-
-  const maskApiKey = (apiKey: string | null | undefined) => {
-    if (!apiKey || apiKey.length <= 8) return '***';
-    return apiKey.slice(0, 4) + '***' + apiKey.slice(-4);
   };
 
   return (
@@ -196,16 +197,21 @@ function AgentRow({ agent, onUpdate, onDelete, onEdit, onCreate, showCreateButto
       {/* API Key */}
       <TableCell className="text-sm text-foreground">
         {isEditing ? (
-          <Input
-            type="password"
-            value={editData.api_key}
-            onChange={(e) => setEditData({ ...editData, api_key: e.target.value })}
-            className="w-full text-sm"
-            placeholder={t('agent.apiKeyPlaceholder')}
-          />
+          <div className="space-y-1">
+            <Input
+              type="password"
+              value={editData.api_key || ''}
+              onChange={(e) => setEditData({ ...editData, api_key: e.target.value })}
+              className="w-full text-sm"
+              placeholder={t('agent.apiKeyLeaveBlankPlaceholder')}
+            />
+            <p className="text-xs text-muted-foreground">
+              {t('agent.apiKeyLeaveBlankHint')}
+            </p>
+          </div>
         ) : (
-          <span className="text-sm text-muted-foreground font-mono">
-            {maskApiKey(agent.api_key)}
+          <span className={`text-sm ${agent.api_key_set ? 'text-green-600' : 'text-red-600'}`}>
+            {agent.api_key_set ? t('agent.apiKeyConfigured') : t('agent.apiKeyMissing')}
           </span>
         )}
       </TableCell>
@@ -446,11 +452,17 @@ export default function AgentsManagementPage() {
 
   const handleUpdateAgent = async (agentId: number, updates: AgentUpdateRequest) => {
     try {
+      const payload = { ...updates };
+      if (!payload.api_key?.trim()) {
+        delete payload.api_key;
+      } else {
+        payload.api_key = payload.api_key.trim();
+      }
       await fetcher(`/admin/agents/${agentId}`, {
         method: 'PUT',
         auth: true,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(payload),
       });
       fetchAgents();
     } catch (err) {

@@ -34,9 +34,9 @@ from app.schemas.admin import (
     UserSearchParams,
     UserUpdateRequest,
 )
-from app.schemas.agent import Agent as AgentSchema
 from app.schemas.agent import (
     AgentActionRequest,
+    AgentAdminOut,
     AgentCreate,
     AgentListResponse,
     AgentSearchParams,
@@ -248,7 +248,7 @@ def get_agents(
     return get_agents_with_pagination(session, params)
 
 
-@admin_router.get("/agents/{agent_id}", response_model=AgentSchema)
+@admin_router.get("/agents/{agent_id}", response_model=AgentAdminOut)
 def get_agent(
     agent_id: int,
     *,
@@ -264,7 +264,7 @@ def get_agent(
     return agent
 
 
-@admin_router.post("/agents", response_model=AgentSchema)
+@admin_router.post("/agents", response_model=AgentAdminOut)
 def create_new_agent(
     agent_data: AgentCreate,
     *,
@@ -281,7 +281,7 @@ def create_new_agent(
         raise HTTPException(status_code=400, detail=error_msg)
 
 
-@admin_router.put("/agents/{agent_id}", response_model=AgentSchema)
+@admin_router.put("/agents/{agent_id}", response_model=AgentAdminOut)
 def update_agent_info(
     agent_id: int,
     agent_data: AgentUpdate,

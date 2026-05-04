@@ -2,7 +2,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.core.i18n import Language
 
@@ -17,11 +17,19 @@ class MessageRole(str, Enum):
 
 class MessageCreate(BaseModel):
     chat_id: int
+    user_id: int
     content: str
     model_conf: Optional[Dict[str, Any]] = None
     role: MessageRole
     lang: str = Language.ZH
     token_usage: Optional[Dict[str, Any]] = None
+
+
+class UserMessageCreate(BaseModel):
+    chat_id: str
+    content: str
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class MessageUpdate(BaseModel):
@@ -34,7 +42,7 @@ class MessageUpdate(BaseModel):
 
 class MessageOut(BaseModel):
     id: int
-    chat_id: int
+    chat_id: str
     content: str
     model_conf: Optional[Dict[str, Any]] = None
     role: MessageRole

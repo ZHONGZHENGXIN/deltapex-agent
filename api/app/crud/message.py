@@ -1,22 +1,38 @@
 from datetime import datetime
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from sqlmodel import Session, select
 
 from app.models.message import Message
-from app.schemas.message import MessageCreate, MessageUpdate
+from app.schemas.message import MessageCreate, MessageOut, MessageUpdate
 
 
 def create_message(message_in: MessageCreate, session: Session) -> Message:
-    message = Message(**message_in.dict())
+    message = Message(**message_in.model_dump())
     session.add(message)
     session.commit()
     session.refresh(message)
     return message
 
 
-def update_message(message_id: int, message_in: MessageUpdate, session: Session) -> Optional[Message]:
-    message = session.exec(select(Message).where(Message.id == message_id, Message.is_deleted == False)).first()
+def message_to_out(message: Message, public_chat_id: str) -> MessageOut:
+    return MessageOut(
+        id=message.id,
+        chat_id=public_chat_id,
+        content=message.content,
+        model_conf=message.model_conf,
+        role=message.role,
+        is_deleted=message.is_deleted,
+        created_at=message.created_at,
+        updated_at=message.updated_at,
+        token_usage=message.token_usage,
+    )
+
+
+def update_message(message_id: int, message_in: MessageUpdate, session: Session, user_id: int) -> Optional[Message]:
+    message = session.exec(
+        select(Message).where(Message.id == message_id, Message.user_id == user_id, Message.is_deleted == False)
+    ).first()
     if not message:
         return None
     message_data = message_in.dict(exclude_unset=True)
@@ -28,8 +44,10 @@ def update_message(message_id: int, message_in: MessageUpdate, session: Session)
     return message
 
 
-def soft_delete_message(message_id: int, session: Session) -> Optional[Message]:
-    message = session.exec(select(Message).where(Message.id == message_id, Message.is_deleted == False)).first()
+def soft_delete_message(message_id: int, session: Session, user_id: int) -> Optional[Message]:
+    message = session.exec(
+        select(Message).where(Message.id == message_id, Message.user_id == user_id, Message.is_deleted == False)
+    ).first()
     if not message:
         return None
     message.is_deleted = True
@@ -40,24 +58,32 @@ def soft_delete_message(message_id: int, session: Session) -> Optional[Message]:
     return message
 
 
-def get_all_messages(chat_id: int, session: Session) -> List[Message]:
+def get_all_messages(chat_id: int, user_id: int, session: Session) -> List[Message]:
     messages = session.exec(
         select(Message)
-        .where(Message.chat_id == chat_id, Message.is_deleted == False)
+        .where(Message.chat_id == chat_id, Message.user_id == user_id, Message.is_deleted == False)
         .order_by(Message.created_at.asc())
         .limit(200)
     ).all()
     return messages
 
 
-def get_message(message_id: int, session: Session) -> Optional[Message]:
-    message = session.exec(select(Message).where(Message.id == message_id, Message.is_deleted == False)).first()
+def get_message(message_id: int, session: Session, user_id: int) -> Optional[Message]:
+    message = session.exec(
+        select(Message).where(Message.id == message_id, Message.user_id == user_id, Message.is_deleted == False)
+    ).first()
     if not message:
         return None
     return message
 
 
-def update_message_content(message_id: int, content: str, session: Session, token_usage: Optional[Dict[str, Any]] = None) -> Optional[Message]:
+def update_message_content(
+    message_id: int,
+    content: str,
+    session: Session,
+    token_usage: Optional[Dict[str, Any]] = None,
+    user_id: Optional[int] = None,
+) -> Optional[Message]:
     """
     更新消息内容和 token 统计（用于流式响应的增量保存）
     
@@ -70,7 +96,10 @@ def update_message_content(message_id: int, content: str, session: Session, toke
     返回:
     - Message: 更新后的消息对象，如果消息不存在返回None
     """
-    message = session.exec(select(Message).where(Message.id == message_id, Message.is_deleted == False)).first()
+    conditions = [Message.id == message_id, Message.is_deleted == False]
+    if user_id is not None:
+        conditions.append(Message.user_id == user_id)
+    message = session.exec(select(Message).where(*conditions)).first()
     if not message:
         return None
     

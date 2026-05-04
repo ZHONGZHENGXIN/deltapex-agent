@@ -3,6 +3,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlmodel import Session
 
 from app.db.base import get_session
+from app.db.rls import set_rls_context
 from app.models.user import User, UserType
 from app.services.supabase_auth import sync_local_user_from_supabase, verify_supabase_access_token
 
@@ -12,7 +13,9 @@ security = HTTPBearer()
 def _resolve_authenticated_user(credentials: HTTPAuthorizationCredentials, session: Session) -> User:
     token = credentials.credentials
     claims = verify_supabase_access_token(token)
-    return sync_local_user_from_supabase(session, claims)
+    user = sync_local_user_from_supabase(session, claims)
+    set_rls_context(session, user_id=user.id, is_admin=user.user_type == UserType.ADMIN)
+    return user
 
 
 async def get_current_user(

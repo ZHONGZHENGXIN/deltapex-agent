@@ -18,7 +18,6 @@ interface Agent {
   name: string;
   source: 'llm' | 'dify' | 'fastgpt' | 'coze' | 'custom';
   api_url: string;
-  api_key: string;
   is_think: boolean;
   is_stream: boolean;
   is_deleted: boolean;

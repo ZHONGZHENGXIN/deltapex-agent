@@ -296,8 +296,7 @@ export default function ChatContentPage({
     // 准备请求体
     const requestBody = {
       content: messageContent,
-      chat_id: chat.id,
-      role: 'user'
+      chat_id: chat.id
     }
 
     try {

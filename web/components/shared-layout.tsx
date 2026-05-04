@@ -48,9 +48,9 @@ export default function SharedLayout({ children, breadcrumbTitle }: SharedLayout
   const { chats, fetchChats } = useGlobalDataCache()
   
   // 从路径中获取当前聊天 ID
-  const getCurrentChatId = (): number | null => {
-    const match = pathname.match(/^\/chat\/(\d+)(?:\/.*)?$/)
-    return match ? parseInt(match[1], 10) : null
+  const getCurrentChatId = (): string | null => {
+    const match = pathname.match(/^\/chat\/([^/]+)(?:\/.*)?$/)
+    return match ? match[1] : null
   }
   
   const currentChatId = getCurrentChatId()

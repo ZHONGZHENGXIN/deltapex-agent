@@ -7,7 +7,9 @@ from sqlmodel import Session
 
 from app.core.i18n import Language
 from app.db.base import get_session
+from app.db.rls import set_rls_context
 from app.models.user import User
+from app.models.user import UserType
 from app.services.supabase_auth import sync_local_user_from_supabase, verify_supabase_access_token
 
 
@@ -24,7 +26,9 @@ scheme = HTTPBearer()
 def get_user(credentials: HTTPAuthorizationCredentials = Depends(scheme), session: Session = Depends(get_session)) -> User:
     try:
         claims = verify_supabase_access_token(credentials.credentials)
-        return sync_local_user_from_supabase(session, claims)
+        user = sync_local_user_from_supabase(session, claims)
+        set_rls_context(session, user_id=user.id, is_admin=user.user_type == UserType.ADMIN)
+        return user
     except HTTPException:
         raise
     except Exception as exc:

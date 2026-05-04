@@ -17,7 +17,7 @@ export interface ChatState {
   /** 当前页面类型：'new' 表示新对话，'chat' 表示已有对话 */
   currentPage: 'new' | 'chat'
   /** 当前选中的聊天 ID，null 表示新对话 */
-  currentChatId: number | null
+  currentChatId: string | null
   /** 状态保存时间戳，用于判断状态是否过期 */
   timestamp: number
 }
@@ -62,6 +62,9 @@ export function loadChatState(maxAge: number = 24 * 60 * 60 * 1000): ChatState {
     }
 
     const state = JSON.parse(stored) as ChatState
+    if (state.currentChatId !== null) {
+      state.currentChatId = String(state.currentChatId)
+    }
     
     // 检查状态是否过期
     if (Date.now() - state.timestamp > maxAge) {
@@ -103,7 +106,7 @@ export function saveNewChatState(): void {
  * 
  * @param chatId - 聊天 ID
  */
-export function saveExistingChatState(chatId: number): void {
+export function saveExistingChatState(chatId: string): void {
   saveChatState({
     currentPage: 'chat',
     currentChatId: chatId,
@@ -128,7 +131,7 @@ export function shouldShowNewChat(state: ChatState): boolean {
  * @param availableChatIds - 可用的聊天 ID 列表
  * @returns 要恢复的聊天 ID，如果不应该恢复则返回 null
  */
-export function getChatIdToRestore(state: ChatState, availableChatIds: number[]): number | null {
+export function getChatIdToRestore(state: ChatState, availableChatIds: string[]): string | null {
   if (state.currentPage !== 'chat' || !state.currentChatId) {
     return null
   }

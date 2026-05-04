@@ -18,7 +18,7 @@ import { useScrollPreservation } from '@/hooks/use-scroll-preservation'
 import { fetcher } from '@/util/fetcher'
 import type { Chat } from '@/app/[locale]/types'
 
-export function NavChatList({ chats, onSelectChat, currentChatId }: { chats: Chat[]; onSelectChat?: (chat: Chat) => void; currentChatId?: number }) {
+export function NavChatList({ chats, onSelectChat, currentChatId }: { chats: Chat[]; onSelectChat?: (chat: Chat) => void; currentChatId?: string }) {
   const { state } = useSidebar()
   const pathname = usePathname()
   const router = useRouter()
@@ -37,11 +37,11 @@ export function NavChatList({ chats, onSelectChat, currentChatId }: { chats: Cha
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 从路径中获取当前聊天 ID，用于高亮显示
-  const getCurrentChatIdFromPath = (): number | null => {
+  const getCurrentChatIdFromPath = (): string | null => {
     // 使用国际化导航后，pathname 不包含语言前缀
     // 匹配 /chat/123 格式
-    const match = pathname.match(/^\/chat\/(\d+)(?:\/.*)?$/)
-    return match ? parseInt(match[1], 10) : null
+    const match = pathname.match(/^\/chat\/([^/]+)(?:\/.*)?$/)
+    return match ? match[1] : null
   }
 
   const activeChatId = getCurrentChatIdFromPath() || currentChatId

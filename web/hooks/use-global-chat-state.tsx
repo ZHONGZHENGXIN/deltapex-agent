@@ -7,7 +7,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react'
  */
 interface GlobalChatState {
   /** 当前正在进行对话的聊天 ID，null 表示没有对话在进行 */
-  activeChatId: number | null
+  activeChatId: string | null
   /** 是否有对话正在进行中 */
   isChatActive: boolean
   /** 对话锁定状态 - 当为 true 时，任何聊天都无法发送新消息 */
@@ -15,11 +15,11 @@ interface GlobalChatState {
   /** 当前锁定的聊天标题（用于显示提示信息） */
   lockedChatTitle: string | null
   /** 开始对话 */
-  startChat: (chatId: number, chatTitle?: string) => void
+  startChat: (chatId: string, chatTitle?: string) => void
   /** 结束对话 */
   endChat: () => void
   /** 检查指定聊天是否可以发送消息 */
-  canSendMessage: (chatId: number) => boolean
+  canSendMessage: (chatId: string) => boolean
   /** 获取锁定状态的描述信息 */
   getLockStatusMessage: () => string | null
   /** 强制重置所有对话状态 */
@@ -44,7 +44,7 @@ const GlobalChatStateContext = createContext<GlobalChatState | undefined>(undefi
  */
 export function GlobalChatStateProvider({ children }: { children: ReactNode }) {
   // 当前活跃的聊天 ID
-  const [activeChatId, setActiveChatId] = useState<number | null>(null)
+  const [activeChatId, setActiveChatId] = useState<string | null>(null)
   // 当前锁定的聊天标题
   const [lockedChatTitle, setLockedChatTitle] = useState<string | null>(null)
   
@@ -59,7 +59,7 @@ export function GlobalChatStateProvider({ children }: { children: ReactNode }) {
    * @param chatId - 聊天 ID
    * @param chatTitle - 聊天标题（可选，用于显示锁定提示）
    */
-  const startChat = (chatId: number, chatTitle?: string) => {
+  const startChat = (chatId: string, chatTitle?: string) => {
     setActiveChatId(chatId)
     setLockedChatTitle(chatTitle || `聊天 ${chatId}`)
   }
@@ -86,7 +86,7 @@ export function GlobalChatStateProvider({ children }: { children: ReactNode }) {
    * @param chatId - 聊天 ID
    * @returns 是否可以发送消息
    */
-  const canSendMessage = (chatId: number): boolean => {
+  const canSendMessage = (chatId: string): boolean => {
     // 如果没有活跃对话，或者当前聊天就是活跃对话，则可以发送
     const canSend = !isChatActive || activeChatId === chatId
     return canSend

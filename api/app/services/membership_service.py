@@ -160,7 +160,7 @@ class MembershipService:
             token_limit_reached = not can_use_tokens
 
         # 检查对话轮次限制
-        current_turns = get_chat_turn_count(self.db, chat_id)
+        current_turns = get_chat_turn_count(self.db, chat_id, user_id)
         can_continue_conversation = current_turns < status.conversation_turn_limit
         conversation_limit_reached = not can_continue_conversation
 

@@ -20,7 +20,7 @@ interface Agent {
   name: string;
   source: 'llm' | 'dify' | 'fastgpt' | 'coze' | 'custom';
   api_url: string;
-  api_key: string;
+  api_key_set: boolean;
   model_conf?: Record<string, unknown> | null;
   is_think: boolean;
   is_stream: boolean;
@@ -89,7 +89,7 @@ export default function CreateAgentModal({
               name: fullAgent.name,
               source: fullAgent.source,
               api_url: fullAgent.api_url,
-              api_key: fullAgent.api_key, // 从完整的 agent 数据中获取 API key
+              api_key: '',
               model_conf: fullAgent.model_conf ? JSON.stringify(fullAgent.model_conf, null, 2) : '',
               is_think: fullAgent.is_think,
               is_stream: fullAgent.is_stream,
@@ -160,7 +160,7 @@ export default function CreateAgentModal({
     }
     
     // Validate API Key
-    if (!formData.api_key?.trim()) {
+    if (!isEditing && !formData.api_key?.trim()) {
       setApiKeyError(t('admin.agents.validation.apiKeyRequired'));
       isValid = false;
     }
@@ -196,10 +196,29 @@ export default function CreateAgentModal({
       const method = isEditing ? 'PUT' : 'POST';
       
       // Prepare data with parsed model_conf
-      const submitData = {
-        ...formData,
+      const submitData: {
+        name: string;
+        source: AgentFormData['source'];
+        api_url: string;
+        api_key?: string;
+        model_conf: Record<string, unknown> | null;
+        is_think: boolean;
+        is_stream: boolean;
+      } = {
+        name: formData.name,
+        source: formData.source,
+        api_url: formData.api_url,
+        api_key: formData.api_key,
         model_conf: formData.model_conf?.trim() ? JSON.parse(formData.model_conf) : null,
+        is_think: formData.is_think,
+        is_stream: formData.is_stream,
       };
+
+      if (isEditing && !formData.api_key?.trim()) {
+        delete submitData.api_key;
+      } else if (formData.api_key?.trim()) {
+        submitData.api_key = formData.api_key.trim();
+      }
       
       await fetcher(url, {
         method,
@@ -354,7 +373,7 @@ export default function CreateAgentModal({
           {/* API Key */}
           <div className="space-y-2">
             <Label htmlFor="api_key">
-              {t('agent.apiKey')} <span className="text-red-500">*</span>
+              {t('agent.apiKey')} {!isEditing && <span className="text-red-500">*</span>}
             </Label>
             <div className="relative">
               <Input
@@ -362,7 +381,7 @@ export default function CreateAgentModal({
                 type={showApiKey ? 'text' : 'password'}
                 value={formData.api_key}
                 onChange={(e) => handleInputChange('api_key', e.target.value)}
-                placeholder={t('agent.apiKeyPlaceholder')}
+                placeholder={isEditing ? t('agent.apiKeyLeaveBlankPlaceholder') : t('agent.apiKeyPlaceholder')}
                 className={`pr-10 ${apiKeyError ? 'border-red-500' : ''}`}
               />
               <button
@@ -379,6 +398,11 @@ export default function CreateAgentModal({
             </div>
             {apiKeyError && (
               <p className="text-sm text-red-600">{apiKeyError}</p>
+            )}
+            {isEditing && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t('agent.apiKeyLeaveBlankHint')}
+              </p>
             )}
           </div>
 

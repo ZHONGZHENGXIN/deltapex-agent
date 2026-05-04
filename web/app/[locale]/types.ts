@@ -77,7 +77,7 @@ export class MessageConverter {
 }
 
 export interface Chat {
-  id: number;
+  id: string;
   title: string;
   content: string;
   agent_id?: number;
@@ -91,19 +91,6 @@ export interface Agent {
   id: number;
   name: string;
   source: 'llm' | 'dify' | 'fastgpt' | 'coze' | 'custom';
-  api_url: string;
-  api_key: string;
-  model_conf?: {
-    model?: string;
-    temperature?: number;
-    max_tokens?: number;
-    top_p?: number;
-    frequency_penalty?: number;
-    presence_penalty?: number;
-  };
   is_think: boolean;
   is_stream: boolean;
-  is_deleted: boolean;
-  created_at: string;
-  updated_at: string;
 }

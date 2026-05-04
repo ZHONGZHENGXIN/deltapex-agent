@@ -3,6 +3,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.i18n import get_message
+from app.crud.chat import get_chat_record
 from app.crud.membership import (
     create_membership_plan,
     delete_membership_plan,
@@ -238,14 +239,18 @@ def admin_upgrade_user_membership(
     description="检查当前用户在指定对话中的使用限制",
 )
 def check_usage_limits(
-    chat_id: int,
+    chat_id: str,
     db: SessionDep,
     lang: LangDep,
     current_user: User = Depends(get_current_user),
 ):
     """检查使用限制"""
+    chat = get_chat_record(chat_id, db, current_user)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=get_message("chat_not_found", lang))
+
     service = MembershipService(db)
-    return service.check_usage_limits(current_user.id, chat_id)
+    return service.check_usage_limits(current_user.id, chat.id)
 
 
 @membership_router.post(
@@ -254,7 +259,7 @@ def check_usage_limits(
     description="记录用户在指定对话中的使用情况",
 )
 def record_usage(
-    chat_id: int,
+    chat_id: str,
     db: SessionDep,
     lang: LangDep,
     message_count: int = Query(1, ge=1, description="消息数量"),
@@ -262,8 +267,12 @@ def record_usage(
     current_user: User = Depends(get_current_user),
 ):
     """记录使用情况"""
+    chat = get_chat_record(chat_id, db, current_user)
+    if not chat:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=get_message("chat_not_found", lang))
+
     service = MembershipService(db)
-    success = service.record_usage(current_user.id, chat_id, message_count, token_count)
+    success = service.record_usage(current_user.id, chat.id, message_count, token_count)
 
     if not success:
         raise HTTPException(

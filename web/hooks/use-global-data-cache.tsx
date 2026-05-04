@@ -21,15 +21,15 @@ interface GlobalDataCache {
   /** 添加新聊天到缓存 */
   addChatToCache: (chat: Chat) => void
   /** 更新缓存中的聊天 */
-  updateChatInCache: (chatId: number, updates: Partial<Chat>) => void
+  updateChatInCache: (chatId: string, updates: Partial<Chat>) => void
   /** 向指定聊天添加新消息 */
-  addMessageToChat: (chatId: number, message: Message) => void
+  addMessageToChat: (chatId: string, message: Message) => void
   /** 更新指定聊天中的消息 */
-  updateMessageInChat: (chatId: number, messageId: number, updates: Partial<Message>) => void
+  updateMessageInChat: (chatId: string, messageId: number, updates: Partial<Message>) => void
   /** 从缓存中删除指定聊天 */
-  removeChatFromCache: (chatId: number) => void
+  removeChatFromCache: (chatId: string) => void
   /** 获取单个聊天详情（带缓存） */
-  getChatById: (chatId: number) => Promise<Chat | null>
+  getChatById: (chatId: string) => Promise<Chat | null>
   /** 活跃的 Agent 列表缓存 */
   agents: Agent[] | null
   /** Agent 列表加载状态 */
@@ -60,13 +60,13 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   const [hasMoreChats, setHasMoreChats] = useState(true)
   
   // 聊天详情缓存
-  const [chatDetailsCache, setChatDetailsCache] = useState<Map<number, Chat>>(new Map())
+  const [chatDetailsCache, setChatDetailsCache] = useState<Map<string, Chat>>(new Map())
   
   // 正在获取的聊天 ID 集合，防止重复请求
-  const [fetchingChatIds, setFetchingChatIds] = useState<Set<number>>(new Set())
+  const [fetchingChatIds, setFetchingChatIds] = useState<Set<string>>(new Set())
   
   // 获取开始时间记录，用于检测超时
-  const [fetchingStartTimes, setFetchingStartTimes] = useState<Map<number, number>>(new Map())
+  const [fetchingStartTimes, setFetchingStartTimes] = useState<Map<string, number>>(new Map())
   
   // Agent 列表缓存
   const [agents, setAgents] = useState<Agent[] | null>(null)
@@ -80,7 +80,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
       
       setFetchingStartTimes(prev => {
         const newMap = new Map(prev)
-        const timeoutIds: number[] = []
+        const timeoutIds: string[] = []
         
         prev.forEach((startTime, chatId) => {
           if (now - startTime > timeout) {
@@ -214,7 +214,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   /**
    * 更新缓存中的聊天
    */
-  const updateChatInCache = useCallback((chatId: number, updates: Partial<Chat>) => {
+  const updateChatInCache = useCallback((chatId: string, updates: Partial<Chat>) => {
     setChats(prev => {
       if (!prev) return prev
       return prev.map(chat => 
@@ -235,7 +235,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   /**
    * 向指定聊天添加新消息（本地缓存更新）
    */
-  const addMessageToChat = useCallback((chatId: number, message: Message) => {
+  const addMessageToChat = useCallback((chatId: string, message: Message) => {
     // 更新聊天列表缓存
     setChats(prev => {
       if (!prev) return prev
@@ -271,7 +271,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   /**
    * 更新指定聊天中的消息（本地缓存更新）
    */
-  const updateMessageInChat = useCallback((chatId: number, messageId: number, updates: Partial<Message>) => {
+  const updateMessageInChat = useCallback((chatId: string, messageId: number, updates: Partial<Message>) => {
     const updateMessages = (messages: Message[]) => {
       return messages.map(msg => 
         msg.id === messageId ? { ...msg, ...updates } : msg
@@ -311,7 +311,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   /**
    * 从缓存中删除指定聊天
    */
-  const removeChatFromCache = useCallback((chatId: number) => {
+  const removeChatFromCache = useCallback((chatId: string) => {
     // 从聊天列表中移除
     setChats(prev => {
       if (!prev) return prev
@@ -330,7 +330,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
    * 获取单个聊天详情（带缓存）
    * 优先使用包含完整消息数据的缓存，避免不必要的网络请求
    */
-  const getChatById = useCallback(async (chatId: number): Promise<Chat | null> => {
+  const getChatById = useCallback(async (chatId: string): Promise<Chat | null> => {
     // 先检查详情缓存 - 优先返回包含消息的数据
     const cachedChat = chatDetailsCache.get(chatId)
     if (cachedChat && cachedChat.messages && cachedChat.messages.length > 0) {
@@ -417,7 +417,7 @@ export function GlobalDataCacheProvider({ children }: { children: ReactNode }) {
   /**
    * 从服务器获取聊天数据的内部方法
    */
-  const fetchChatFromServer = useCallback(async (chatId: number): Promise<Chat | null> => {
+  const fetchChatFromServer = useCallback(async (chatId: string): Promise<Chat | null> => {
     // 标记正在获取
     const startTime = Date.now()
     setFetchingChatIds(prev => new Set(prev).add(chatId))

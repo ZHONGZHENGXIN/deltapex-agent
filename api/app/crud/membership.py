@@ -248,13 +248,14 @@ def update_daily_usage(
 # ==================== 使用记录 CRUD（已删除，使用其他数据源替代）====================
 
 
-def get_chat_turn_count(db: Session, chat_id: int) -> int:
+def get_chat_turn_count(db: Session, chat_id: int, user_id: Optional[int] = None) -> int:
     """获取对话轮次数"""
     # 对话轮次应该基于用户消息数量计算，因为每个用户消息代表一轮对话的开始
 
     result = db.execute(
         select(func.count(Message.id)).where(
             Message.chat_id == chat_id,
+            *([Message.user_id == user_id] if user_id is not None else []),
             Message.role == MessageRole.USER,
             Message.is_deleted == False,
         )

@@ -28,7 +28,7 @@ export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onSelectChat?: (chat: Chat) => void;
   onNewChat?: () => void;
   chats: Chat[];
-  currentChatId?: number;
+  currentChatId?: string;
 }
 
 export function AppSidebar({ onSelectChat, onNewChat, chats, currentChatId, ...props }: AppSidebarProps) {

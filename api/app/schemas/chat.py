@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 from app.core.i18n import Language
-from app.schemas.agent import Agent
+from app.schemas.agent import AgentPublic
 from app.schemas.message import MessageOut
 
 
@@ -24,11 +24,11 @@ class ChatUpdate(BaseModel):
 
 
 class ChatOut(BaseModel):
-    id: int
+    id: str
     title: str
     content: Optional[str] = None
     agent_id: Optional[int] = None
-    agent: Optional[Agent] = None
+    agent: Optional[AgentPublic] = None
     messages: List[MessageOut] = []  
     others: Optional[Dict[str, Any]] = None
     is_deleted: bool

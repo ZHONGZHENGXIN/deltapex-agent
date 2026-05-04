@@ -29,7 +29,7 @@ function ChatPageContent() {
   
   
   // 从 URL 参数获取聊天 ID 和初始消息
-  const chatId = params.id ? parseInt(params.id as string, 10) : null
+  const chatId = params.id ? String(params.id) : null
   
   // 检查 URL 参数中的初始消息
   useEffect(() => {
@@ -51,7 +51,7 @@ function ChatPageContent() {
 
   // 使用 ref 来避免依赖项问题
   const initializingRef = useRef(false)
-  const lastChatIdRef = useRef<number | null>(null)
+  const lastChatIdRef = useRef<string | null>(null)
 
   // 初始化页面数据 - 避免无限循环
   useEffect(() => {
@@ -61,7 +61,7 @@ function ChatPageContent() {
     }
 
     const initializePage = async () => {
-      if (!chatId || isNaN(chatId)) {
+      if (!chatId) {
         setNotFoundError(true)
         setIsLoading(false)
         return

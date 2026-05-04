@@ -35,6 +35,7 @@ dev-dependencies = [
     "isort>=5.13.2",
     "black>=24.0.0",
     "pre-commit>=4.0.1",
+    "pytest>=8.0.0",
 ]
 
 # Black 配置

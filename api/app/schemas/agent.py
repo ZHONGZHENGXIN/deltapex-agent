@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, validator
 
 from app.models.agent import AgentSource
 
@@ -30,17 +30,17 @@ class AgentUpdate(BaseModel):
     is_stream: Optional[bool] = None
 
 
-class Agent(AgentBase):
+class AgentPublic(BaseModel):
     id: int
-    is_deleted: bool
-    created_at: datetime
-    updated_at: datetime
+    name: str
+    source: AgentSource
+    is_think: bool
+    is_stream: bool
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
-class AgentList(BaseModel):
+class AgentAdminOut(BaseModel):
     id: int
     name: str
     source: AgentSource
@@ -51,9 +51,44 @@ class AgentList(BaseModel):
     is_deleted: bool
     created_at: datetime
     updated_at: datetime
+    api_key_set: bool = False
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def derive_api_key_state(cls, data):
+        if isinstance(data, dict):
+            payload = dict(data)
+            payload["api_key_set"] = bool(payload.get("api_key") or payload.get("api_key_set"))
+            payload.pop("api_key", None)
+            return payload
+
+        return {
+            "id": getattr(data, "id", None),
+            "name": getattr(data, "name", None),
+            "source": getattr(data, "source", None),
+            "api_url": getattr(data, "api_url", None),
+            "model_conf": getattr(data, "model_conf", None),
+            "is_think": getattr(data, "is_think", None),
+            "is_stream": getattr(data, "is_stream", None),
+            "is_deleted": getattr(data, "is_deleted", None),
+            "created_at": getattr(data, "created_at", None),
+            "updated_at": getattr(data, "updated_at", None),
+            "api_key_set": bool(getattr(data, "api_key", None) or getattr(data, "api_key_set", False)),
+        }
+
+
+class AgentAdminListItem(AgentAdminOut):
+    pass
+
+
+class Agent(AgentAdminOut):
+    pass
+
+
+class AgentList(AgentAdminListItem):
+    pass
 
 
 class AgentListResponse(BaseModel):
