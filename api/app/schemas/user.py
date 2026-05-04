@@ -1,8 +1,8 @@
 import re
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, EmailStr, validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, validator
 
 from app.core.i18n import Language
 from app.models.user import UserType
@@ -109,3 +109,42 @@ class UpgradeResponse(BaseModel):
     success: bool
     message: str
     user_profile: Optional[UserProfile] = None
+
+
+class AccountDeletionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    confirm_text: str = Field(description="Must equal DELETE")
+    reason: Optional[str] = Field(default=None, max_length=500)
+
+
+class AccountDeletionResponse(BaseModel):
+    success: bool
+    audit_id: int
+    deleted_user_id: int
+    anonymized_email: str
+    result: dict[str, Any]
+
+
+class AccountDeletionAuditOut(BaseModel):
+    id: int
+    user_id: int
+    actor_user_id: int
+    actor_type: str
+    status: str
+    reason: Optional[str] = None
+    scope: dict[str, Any]
+    result: dict[str, Any]
+    error_message: Optional[str] = None
+    requested_at: datetime
+    completed_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class AccountDeletionAuditListResponse(BaseModel):
+    items: list[AccountDeletionAuditOut]
+    total: int
+    limit: int
+    offset: int

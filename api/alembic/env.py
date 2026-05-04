@@ -5,6 +5,7 @@ from sqlalchemy import pool
 from sqlmodel import SQLModel
 from alembic import context
 
+from app.models.account_deletion import AccountDeletionAudit
 from app.models.chat import Chat
 from app.models.user import User
 from app.models.message import Message

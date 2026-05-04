@@ -5,6 +5,7 @@ from sqlmodel import Session, SQLModel, create_engine
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.crud.agent import create_default_agent
+from app.models.account_deletion import AccountDeletionAudit
 from app.models.billing import TokenPackage, TokenTopupOrder, UserTokenWallet
 from app.models.chat import Chat
 from app.models.memory import ChatSummary, StudentProfile

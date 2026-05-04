@@ -138,7 +138,7 @@
 
 ### P0-3a Chat UUID 改造
 
-**状态:** 代码完成，待部署执行迁移
+**状态:** 完成
 **目标:** 外部 URL 和 API 不再暴露自增 `Chat.id`。
 
 **问题**
@@ -182,7 +182,7 @@
 
 ### P0-3b Message 加 user_id
 
-**状态:** 代码完成，待部署执行迁移
+**状态:** 完成
 **目标:** Message 表具备直接的用户归属字段，所有消息查询都能按 `user_id` 过滤。
 
 **问题**
@@ -225,7 +225,7 @@ Message 表只有 `chat_id`，没有 `user_id`。消息读取依赖 chat 入口�
 
 ### P0-3c PostgreSQL RLS
 
-**状态:** 代码完成，待部署执行迁移
+**状态:** 完成
 **目标:** 数据库层对 chats/messages 做租户隔离兜底。
 
 **问题**
@@ -443,7 +443,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P1-4 长对话上下文管理
 
-**状态:** 代码完成，待部署执行迁移
+**状态:** 完成
 **验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_memory_context.py api/tests/test_p1_recent_message_window.py -q`，5 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，40 passed。
 **范围说明:** 已新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`、管理员内部查询接口和 provider 上下文组装。画像当前采用早期用户消息种子和结构化字段，后续可再接低成本模型做异步精炼。
 **目标:** 实现“最近 M 轮原文 + 历史滚动摘要 + 学员长期画像”的上下文结构。
@@ -487,12 +487,14 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P1-5 学员级删除权
 
-**状态:** 未开始
+**状态:** 代码完成，待部署执行迁移
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_account_deletion.py -q`，5 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，45 passed；`pnpm exec tsc --noEmit` 通过。
+**范围说明:** 新增学员自助删除接口、删除审计表、管理员审计查询接口和前端个人中心删除入口。对话、消息、画像、摘要、会员关系和 token 钱包删除；订单和充值订单保留财务必要字段但清空 provider/customer/raw payload/备注等可识别字段。生产需执行 Alembic 到 `d20260504p15`。
 **目标:** 学员可以发起账号和对话数据删除，后端可完整删除或合规匿名化。
 
 **问题**
 
-管理员删除用户只是软删除并封禁登录，业务数据保留；Message 表目前也没有 user_id。
+管理员删除用户只是软删除并封禁登录，业务数据保留；P0-3b 已补 `Message.user_id`，本任务需要利用该字段完成学员级删除权。
 
 **风险**
 
@@ -752,15 +754,15 @@ P0 任务额外要求：
 |---|---|---|---|
 | P0-1 API key 泄露修复 | 部分完成 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过 | 代码修复完成；真实 provider key 轮换待人工执行 |
 | P0-2 消息 role 强制 user | 完成 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过 | `/chat/message` 只接收 `chat_id/content`，服务端强制 `role=user` |
-| P0-3a Chat UUID 改造 | 代码完成，待部署执行迁移 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过 | 新增 `Chat.public_id`、历史回填迁移、用户侧路由/API/前端缓存改用 public id；本地执行 Alembic 因 `localhost:5432` 未启动失败，生产需在 Zeabur 后端环境执行 |
-| P0-3b Message 加 user_id | 代码完成，待部署执行迁移 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过 | 新增 `Message.user_id`、历史回填迁移、用户侧消息创建/读取/更新按 `user_id` 隔离；本地执行 Alembic 因 `localhost:5432` 未启动失败，生产需在 Zeabur 后端环境执行 |
-| P0-3c PostgreSQL RLS | 代码完成，待部署执行迁移 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过；Alembic head: `b20260504p03c` | Zeabur PostgreSQL 方案：新增 RLS migration，使用 `app.current_user_id/app.is_admin`，不使用 Supabase `auth.uid()`；本地执行 Alembic 因 `localhost:5432` 未启动失败，生产需在 Zeabur 后端环境执行 |
+| P0-3a Chat UUID 改造 | 完成 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `c20260504p14` | 新增 `Chat.public_id`、历史回填迁移、用户侧路由/API/前端缓存改用 public id |
+| P0-3b Message 加 user_id | 完成 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `c20260504p14` | 新增 `Message.user_id`、历史回填迁移、用户侧消息创建/读取/更新按 `user_id` 隔离 |
+| P0-3c PostgreSQL RLS | 完成 | pytest: `api/tests` 22 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `c20260504p14` | Zeabur PostgreSQL 方案：新增 RLS migration，使用 `app.current_user_id/app.is_admin`，不使用 Supabase `auth.uid()` |
 | P0-3d 跨用户访问测试 | 完成 | pytest: `api/tests/test_cross_user_access.py` 5 passed；pytest: `api/tests` 22 passed | Alice 读取、发消息、更新、删除 Bob chat 均返回 404；列表不包含 Bob 内容；Bob 访问自己 chat 正常 |
 | P1-1 LLM Gateway 接入 | 代码完成，待部署配置 one-api channel/token 并验证 failover | pytest: `api/tests` 31 passed；compose config: `deploy`/`deploy-test` 通过 | 新增 one-api compose service；默认 Agent 改为 LLM/gateway；LLM 调用从 `LLM_GATEWAY_API_KEY/BASE_URL` 读取；LLM 类型 Agent 强制保存 gateway 引用而非 provider key |
 | P1-2 Dify 路径处理 | 完成 | pytest: `api/tests/test_p1_dify_student_disabled.py` 4 passed | 普通学员 active agents 不返回 Dify；直接创建 Dify chat 或向已有 Dify chat 发消息均返回 403；管理员仍可看到 Dify agent |
 | P1-3 流式窗口 bug 修复 | 完成 | pytest: `api/tests/test_p1_recent_message_window.py` 3 passed；pytest: `api/tests` 38 passed | LLM/FastGPT 统一使用最近 `AGENT_CONTEXT_WINDOW_MESSAGES` 条消息，默认 20 |
-| P1-4 长对话上下文管理 | 代码完成，待部署执行迁移 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
-| P1-5 学员级删除权 | 未开始 |  | 财务凭证保留期问 Alex/法务 |
+| P1-4 长对话上下文管理 | 完成 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed；Zeabur Alembic current 已到 `c20260504p14` | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
+| P1-5 学员级删除权 | 代码完成，待部署执行迁移 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过 | 新增 `account_deletion_audits` migration，生产需执行到 `d20260504p15`；财务凭证保留期仍需 Alex/法务确认 |
 | P2-1 后端测试覆盖 | 未开始 |  |  |
 | P2-2 Trace 与结构化日志 | 未开始 |  |  |
 | P2-3 备份与恢复演练 | 未开始 |  |  |

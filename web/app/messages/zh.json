@@ -669,6 +669,13 @@
     "todayTokens": "今日Token",
     "dailyStats": "今日统计",
     "overallStats": "历史统计",
+    "deleteAccount": "删除我的账号",
+    "deleteAccountDescription": "删除后将清除个人对话、消息、画像、摘要、会员记录和 Token 钱包；订单凭证会保留但脱敏。此操作不可撤销。",
+    "deleteConfirmPlaceholder": "输入 DELETE 确认删除",
+    "deleteReasonPlaceholder": "删除原因（可选）",
+    "deleteAccountButton": "永久删除账号",
+    "deleteAccountSuccess": "账号删除完成",
+    "deleteAccountFailed": "账号删除失败，请稍后重试",
     "membershipDetails": {
       "freeDescription": "免费版本，享受基础功能",
       "monthlyDescription": "月度会员，享受更多权益",

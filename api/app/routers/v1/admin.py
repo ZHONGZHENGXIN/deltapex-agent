@@ -43,6 +43,8 @@ from app.schemas.agent import (
     AgentUpdate,
 )
 from app.schemas.membership import MembershipType
+from app.schemas.user import AccountDeletionAuditListResponse
+from app.services.account_deletion_service import AccountDeletionService
 from app.services.memory_service import MemoryService
 
 admin_router = APIRouter(prefix="/admin")
@@ -117,6 +119,24 @@ def get_chats(
     )
     result = get_chats_with_user_info(session, params)
     return ChatListResponse(**result)
+
+
+@admin_router.get("/account-deletion-audits", response_model=AccountDeletionAuditListResponse)
+def get_account_deletion_audits(
+    *,
+    session: SessionDep,
+    user_id: Optional[int] = None,
+    limit: int = 20,
+    offset: int = 0,
+    admin_user: User = Depends(verify_admin_user),
+) -> AccountDeletionAuditListResponse:
+    """查询账号删除审计日志。"""
+    items, total = AccountDeletionService(session).list_deletion_audits(
+        user_id=user_id,
+        limit=limit,
+        offset=offset,
+    )
+    return AccountDeletionAuditListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @admin_router.get("/users/{user_id}")

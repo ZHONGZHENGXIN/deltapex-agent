@@ -1,9 +1,12 @@
 ﻿"use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 
-import { 
+import {
+  AlertTriangle,
   User, 
   Crown, 
   Shield, 
@@ -13,11 +16,13 @@ import {
   Calendar,
   Mail,
   Clock,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from "lucide-react"
 
 import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Dialog,
@@ -25,8 +30,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useGlobalUserData } from '@/hooks/use-global-user-data'
+import { getSupabaseBrowserClient } from '@/util/supabase'
+import { deleteMyAccount } from '@/util/user-api'
 import { 
   getUserTypeText, 
   useUserStatus,
@@ -48,7 +56,11 @@ export default function ProfileDialog({
   user 
 }: ProfileDialogProps) {
   const t = useTranslations()
+  const router = useRouter()
   const { userType, isAdmin } = useUserStatus(user.email)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleteReason, setDeleteReason] = useState('')
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const {
     membershipStatus,
     tokenWallet,
@@ -62,6 +74,41 @@ export default function ProfileDialog({
       void refreshTokenWallet()
     }
   }, [open, refreshMembershipStatus, refreshTokenWallet])
+
+  useEffect(() => {
+    if (!open) {
+      setDeleteConfirmText('')
+      setDeleteReason('')
+      setIsDeletingAccount(false)
+    }
+  }, [open])
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETE' || isDeletingAccount) {
+      return
+    }
+
+    setIsDeletingAccount(true)
+    try {
+      await deleteMyAccount(deleteConfirmText, deleteReason.trim() || undefined)
+      try {
+        const supabase = getSupabaseBrowserClient()
+        await supabase.auth.signOut()
+      } catch (error) {
+        console.error('Supabase sign out after account deletion failed:', error)
+      }
+      localStorage.removeItem('user_type')
+      window.dispatchEvent(new CustomEvent('user-type-changed'))
+      onOpenChange(false)
+      toast.success(t('profile.deleteAccountSuccess'))
+      router.push('/login')
+    } catch (error) {
+      console.error('Delete account failed:', error)
+      toast.error(t('profile.deleteAccountFailed'))
+      setIsDeletingAccount(false)
+    }
+  }
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('zh-CN', {
       year: 'numeric',
@@ -392,6 +439,48 @@ export default function ProfileDialog({
                   </div>
                 </div>
 
+              </CardContent>
+            </Card>
+          )}
+
+          {!isAdmin && (
+            <Card className="border-red-200 dark:border-red-900">
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm text-red-700 dark:text-red-300">
+                      {t('profile.deleteAccount')}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t('profile.deleteAccountDescription')}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    value={deleteConfirmText}
+                    onChange={(event) => setDeleteConfirmText(event.target.value)}
+                    placeholder={t('profile.deleteConfirmPlaceholder')}
+                    disabled={isDeletingAccount}
+                  />
+                  <Input
+                    value={deleteReason}
+                    onChange={(event) => setDeleteReason(event.target.value)}
+                    placeholder={t('profile.deleteReasonPlaceholder')}
+                    disabled={isDeletingAccount}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="w-full"
+                  disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
+                  onClick={handleDeleteAccount}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {isDeletingAccount ? t('common.actions.deleting') : t('profile.deleteAccountButton')}
+                </Button>
               </CardContent>
             </Card>
           )}

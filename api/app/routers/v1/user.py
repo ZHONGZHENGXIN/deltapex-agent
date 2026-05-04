@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.dependencies.auth import get_current_user
 from app.dependencies.db import LangDep, SessionDep
 from app.models.user import User
 from app.schemas.membership import UserUsageStats
-from app.schemas.user import UpgradeRequest, UpgradeResponse
+from app.schemas.user import AccountDeletionRequest, AccountDeletionResponse, UpgradeRequest, UpgradeResponse
+from app.services.account_deletion_service import AccountDeletionError, AccountDeletionService
 from app.services.membership_service import MembershipService
 from app.services.user_service import upgrade_user_membership
 
@@ -59,3 +60,31 @@ async def get_user_total_stats(session: SessionDep, lang: LangDep, current_user:
     """
     membership_service = MembershipService(session)
     return membership_service.get_user_total_stats(current_user.id)
+
+
+@user_router.post("/delete-account", response_model=AccountDeletionResponse)
+def delete_my_account(
+    deletion_request: AccountDeletionRequest,
+    session: SessionDep,
+    lang: LangDep,
+    current_user: User = Depends(get_current_user),
+) -> AccountDeletionResponse:
+    """学员自助删除账号和个人对话数据。"""
+    if deletion_request.confirm_text != "DELETE":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Confirmation text must be DELETE")
+
+    try:
+        audit = AccountDeletionService(session).delete_student_account(
+            current_user,
+            reason=deletion_request.reason,
+        )
+    except AccountDeletionError as exc:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=str(exc)) from exc
+
+    return AccountDeletionResponse(
+        success=True,
+        audit_id=audit.id,
+        deleted_user_id=audit.user_id,
+        anonymized_email=audit.result.get("anonymized_email", ""),
+        result=audit.result,
+    )

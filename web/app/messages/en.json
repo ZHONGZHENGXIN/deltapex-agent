@@ -669,6 +669,13 @@
     "todayTokens": "Today's Tokens",
     "dailyStats": "Daily Stats",
     "overallStats": "Overall Stats",
+    "deleteAccount": "Delete my account",
+    "deleteAccountDescription": "This removes personal chats, messages, profile memory, summaries, memberships, and token wallet. Financial records are retained with provider identifiers removed. This cannot be undone.",
+    "deleteConfirmPlaceholder": "Type DELETE to confirm",
+    "deleteReasonPlaceholder": "Reason for deletion (optional)",
+    "deleteAccountButton": "Permanently delete account",
+    "deleteAccountSuccess": "Account deletion completed",
+    "deleteAccountFailed": "Account deletion failed. Please try again later.",
     "membershipDetails": {
       "freeDescription": "Free version with basic features",
       "monthlyDescription": "Monthly membership with enhanced benefits",

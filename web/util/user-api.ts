@@ -116,6 +116,14 @@ export interface UpgradeResponse {
   user_profile: UserProfile | null
 }
 
+export interface AccountDeletionResponse {
+  success: boolean
+  audit_id: number
+  deleted_user_id: number
+  anonymized_email: string
+  result: Record<string, unknown>
+}
+
 /**
  * 升级用户会员
  */
@@ -129,6 +137,23 @@ export async function upgradeUserMembership(planId: string): Promise<UpgradeResp
   })
   
   return response as UpgradeResponse
+}
+
+export async function deleteMyAccount(confirmText: string, reason?: string): Promise<AccountDeletionResponse> {
+  try {
+    const response = await fetcher('/user/delete-account', {
+      method: 'POST',
+      auth: true,
+      body: JSON.stringify({
+        confirm_text: confirmText,
+        reason: reason || null,
+      }),
+    })
+    return response as AccountDeletionResponse
+  } catch (error) {
+    console.error('Failed to delete account:', error)
+    throw error
+  }
 }
 
 /**
