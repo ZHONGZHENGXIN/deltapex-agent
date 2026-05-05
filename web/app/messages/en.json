@@ -312,6 +312,26 @@
         "failedToLoadDashboard": "Failed to load dashboard data"
       }
     },
+    "monitoring": {
+      "title": "Monitoring",
+      "generatedAt": "Updated {time}",
+      "p99Latency": "P99 latency",
+      "errorRate": "API error rate",
+      "requestCount": "Requests in window",
+      "llmFailureRate": "Max LLM failure rate",
+      "alerts": "Alerts",
+      "noAlerts": "No active alerts",
+      "llmChannels": "LLM channel health",
+      "noLlmData": "No LLM calls in the current window",
+      "tokenAlerts": "Token outlier alerts",
+      "noTokenAlerts": "No users exceeded the token alert threshold",
+      "qualitySamples": "AI output sampling queue",
+      "noQualitySamples": "No assistant messages in the last 24 hours",
+      "requests": "Requests",
+      "errors": "Errors",
+      "tokens": "Tokens",
+      "threshold": "Threshold"
+    },
     "users": {
       "createUser": "Create User",
       "createNewUser": "Create New User",

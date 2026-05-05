@@ -1,218 +1,184 @@
 'use client'
 
-// React 核心库
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
-
-// 第三方库 - 图标
-import { 
-  Users,
-  UserPlus,
-  MessageSquare,  
-  UserX, 
-  UserCog,
-  ShoppingCart, 
-  DollarSign, 
-  UserCheck, 
-  Crown,
+import {
+  Activity,
+  AlertTriangle,
   CircleDollarSign,
+  Crown,
+  DollarSign,
+  Gauge,
+  Link as LinkIcon,
+  MessageSquare,
   MessageSquarePlus,
+  ShieldAlert,
   ShoppingBasket,
+  ShoppingCart,
+  Timer,
+  UserCheck,
+  UserCog,
+  UserPlus,
+  UserX,
+  Users,
+  Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
-// 项目内部导入
+import type { DashboardStats, MonitoringDashboard } from '@/app/[locale]/admin/types'
 import { fetcher } from '@/util/fetcher'
-import type { DashboardStats } from '@/app/[locale]/admin/types'
 
-/**
- * 统计卡片组件的 Props 接口
- */
 interface StatCardProps {
-  title: string        // 卡片标题
-  value: number        // 统计数值
-  icon: React.ReactNode // 图标组件
-  color: string        // 背景颜色类名
-  isCurrency?: boolean // 是否为货币格式
+  title: string
+  value: number
+  icon: ReactNode
+  color: string
+  isCurrency?: boolean
 }
 
-/**
- * 统计卡片组件
- * 
- * 功能:
- * - 显示统计数据的卡片
- * - 支持货币格式化
- * - 包含图标和数值展示
- * 
- * @param title - 卡片标题
- * @param value - 统计数值
- * @param icon - 图标组件
- * @param color - 背景颜色类名
- * @param isCurrency - 是否为货币格式，默认 false
- */
-function StatCard({ title, value, icon, color, isCurrency = false }: StatCardProps) {
-  /**
-   * 格式化数值显示
-   * 
-   * @param val - 要格式化的数值
-   * @returns 格式化后的字符串
-   */
-  const formatValue = (val: number): string => {
-    if (isCurrency) {
-      // 货币格式：$1,234.56
-      return `$${val.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      })}`
-    }
-    // 普通数字格式：1,234
-    return val.toLocaleString()
-  }
+interface MetricCardProps {
+  title: string
+  value: string
+  icon: ReactNode
+  color: string
+}
 
+interface PanelProps {
+  title: string
+  icon: ReactNode
+  children: ReactNode
+  action?: ReactNode
+}
+
+function formatNumber(value: number): string {
+  return value.toLocaleString()
+}
+
+function formatCurrency(value: number): string {
+  return `$${value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(2)}%`
+}
+
+function StatCard({ title, value, icon, color, isCurrency = false }: StatCardProps) {
   return (
     <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold text-foreground">{formatValue(value)}</p>
+          <p className="text-2xl font-bold text-foreground">
+            {isCurrency ? formatCurrency(value) : formatNumber(value)}
+          </p>
         </div>
-        <div className={`p-3 rounded-full ${color} ml-4`}>
-          {icon}
+        <div className={`shrink-0 p-3 rounded-full ${color}`}>{icon}</div>
+      </div>
+    </div>
+  )
+}
+
+function MetricCard({ title, value, icon, color }: MetricCardProps) {
+  return (
+    <div className="bg-card rounded-lg p-6 shadow-sm border border-border">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
+        </div>
+        <div className={`shrink-0 p-3 rounded-full ${color}`}>{icon}</div>
+      </div>
+    </div>
+  )
+}
+
+function Panel({ title, icon, children, action }: PanelProps) {
+  return (
+    <section className="bg-card rounded-lg p-6 shadow-sm border border-border">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="text-muted-foreground">{icon}</div>
+          <h2 className="text-base font-semibold text-foreground truncate">{title}</h2>
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function EmptyState({ children }: { children: ReactNode }) {
+  return <p className="text-sm text-muted-foreground py-4">{children}</p>
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="animate-pulse space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, index) => (
+            <div key={`top-${index}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
+              <div className="h-4 bg-muted rounded w-24 mb-3" />
+              <div className="h-8 bg-muted rounded w-20" />
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(9)].map((_, index) => (
+            <div key={`body-${index}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
+              <div className="h-4 bg-muted rounded w-28 mb-3" />
+              <div className="h-8 bg-muted rounded w-24" />
+            </div>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
-/**
- * 管理后台仪表板页面组件
- * 
- * 功能:
- * - 显示系统各项统计数据
- * - 包含用户、对话、订单、收入等统计信息
- * - 支持加载状态和错误处理
- * - 响应式布局设计
- */
 export default function DashboardPage() {
-  // 国际化翻译
   const t = useTranslations()
-  
-  // 状态管理
-  const [stats, setStats] = useState<DashboardStats | null>(null)  // 统计数据
-  const [loading, setLoading] = useState(true)                     // 加载状态
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [monitoring, setMonitoring] = useState<MonitoringDashboard | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // 组件挂载时获取数据
-  useEffect(() => {
-    fetchDashboardStats()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  /**
-   * 获取仪表板统计数据
-   * 
-   * 功能:
-   * - 调用后端 API 获取统计数据
-   * - 处理加载状态和错误情况
-   * - 显示用户友好的错误提示
-   */
-  const fetchDashboardStats = async (): Promise<void> => {
+  const fetchDashboardStats = useCallback(async (): Promise<void> => {
     try {
       setLoading(true)
-      // 使用 fetcher 函数调用 API
-      const data = await fetcher('/admin/dashboard', {
-        method: 'GET',
-        auth: true,
-      })
-      setStats(data as DashboardStats)
+      const [dashboardData, monitoringData] = await Promise.all([
+        fetcher('/admin/dashboard', {
+          method: 'GET',
+          auth: true,
+        }),
+        fetcher('/admin/monitoring', {
+          method: 'GET',
+          auth: true,
+        }),
+      ])
+      setStats(dashboardData as DashboardStats)
+      setMonitoring(monitoringData as MonitoringDashboard)
     } catch (error) {
-      // 获取具体的错误信息
-      let errorMessage = t('admin.dashboard.messages.failedToLoadDashboard');
-      
+      let errorMessage = t('admin.dashboard.messages.failedToLoadDashboard')
       if (error instanceof Error) {
-        // 优先使用后端返回的具体错误信息
-        errorMessage = error.message || errorMessage;
+        errorMessage = error.message || errorMessage
       }
-      
-      // 显示错误提示
-      toast.error(errorMessage);
+      toast.error(errorMessage)
     } finally {
       setLoading(false)
     }
-  }
+  }, [t])
 
-  // 加载状态 - 显示骨架屏
+  useEffect(() => {
+    void fetchDashboardStats()
+  }, [fetchDashboardStats])
+
   if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="animate-pulse">
-          {/* 页面标题骨架屏 */}
-          <div className="h-8 bg-muted rounded w-64 mb-6"></div>
-          
-          {/* 今日统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 m'b">
-            {[...Array(4)].map((_, i) => (
-              <div key={`today-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-          
-          {/* 收入统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={`membership-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-        
-          {/* 用户统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-            {[...Array(4)].map((_, i) => (
-              <div key={`user-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-          
-          {/* 会员类型统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={`membership-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-          
-          {/* 对话统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={`chat-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-
-          {/* 订单统计骨架屏 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-            {[...Array(3)].map((_, i) => (
-              <div key={`order-${i}`} className="bg-card rounded-lg p-6 shadow-sm border border-border">
-                <div className="h-4 bg-muted rounded w-20 mb-2"></div>
-                <div className="h-8 bg-muted rounded w-16"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingSkeleton />
   }
 
-  // 数据加载失败状态
   if (!stats) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
@@ -223,17 +189,20 @@ export default function DashboardPage() {
     )
   }
 
-  // 主要内容渲染
+  const maxLlmFailureRate = monitoring?.llm_channels.reduce(
+    (max, channel) => Math.max(max, channel.failure_rate),
+    0,
+  ) ?? 0
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* 今日统计 - 第一行显示今日重要数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title={t('admin.dashboard.stats.todayRevenue')}
           value={stats.today_revenue}
           icon={<CircleDollarSign className="w-6 h-6 text-white" />}
           color="bg-orange-600"
-          isCurrency={true}
+          isCurrency
         />
         <StatCard
           title={t('admin.dashboard.stats.todayNewUsers')}
@@ -255,33 +224,31 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 收入统计 - 显示营收相关的统计数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title={t('admin.dashboard.stats.totalRevenue')}
           value={stats.total_revenue}
           icon={<DollarSign className="w-6 h-6 text-white" />}
           color="bg-orange-600"
-          isCurrency={true}
+          isCurrency
         />
         <StatCard
           title={t('admin.dashboard.stats.monthlyRevenue')}
           value={stats.monthly_revenue}
           icon={<DollarSign className="w-6 h-6 text-white" />}
           color="bg-orange-500"
-          isCurrency={true}
+          isCurrency
         />
         <StatCard
           title={t('admin.dashboard.stats.sevenDaysRevenue')}
           value={stats.seven_days_revenue}
           icon={<DollarSign className="w-6 h-6 text-white" />}
           color="bg-orange-400"
-          isCurrency={true}
+          isCurrency
         />
       </div>
 
-      {/* 用户统计 - 显示用户相关的统计数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title={t('admin.dashboard.stats.totalUsers')}
           value={stats.total_users}
@@ -308,14 +275,13 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 会员类型统计 - 按会员类型分类的用户数量 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
-            title={t('admin.dashboard.stats.yearlyUsers')}
-            value={stats.yearly_users}
-            icon={<Crown className="w-6 h-6 text-white" />}
-            color="bg-blue-600"
-          />
+          title={t('admin.dashboard.stats.yearlyUsers')}
+          value={stats.yearly_users}
+          icon={<Crown className="w-6 h-6 text-white" />}
+          color="bg-blue-600"
+        />
         <StatCard
           title={t('admin.dashboard.stats.monthlyUsers')}
           value={stats.monthly_users}
@@ -330,8 +296,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 对话统计 - 显示聊天对话相关的统计数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title={t('admin.dashboard.stats.totalChats')}
           value={stats.total_chats}
@@ -352,8 +317,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* 订单统计 - 显示订单和购买相关的统计数据 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title={t('admin.dashboard.stats.totalOrders')}
           value={stats.total_orders}
@@ -374,7 +338,191 @@ export default function DashboardPage() {
         />
       </div>
 
+      {monitoring && (
+        <section className="space-y-6 pt-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">{t('admin.monitoring.title')}</h1>
+              <p className="text-sm text-muted-foreground">
+                {t('admin.monitoring.generatedAt', {
+                  time: new Date(monitoring.generated_at).toLocaleString(),
+                })}
+              </p>
+            </div>
+            {monitoring.external_links.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {monitoring.external_links.map((link) => (
+                  <a
+                    key={`${link.label}-${link.url}`}
+                    href={link.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm text-foreground hover:bg-muted"
+                  >
+                    <LinkIcon className="h-4 w-4" />
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard
+              title={t('admin.monitoring.p99Latency')}
+              value={`${monitoring.request_metrics.p99_latency_ms.toLocaleString()} ms`}
+              icon={<Timer className="w-6 h-6 text-white" />}
+              color="bg-indigo-600"
+            />
+            <MetricCard
+              title={t('admin.monitoring.errorRate')}
+              value={formatPercent(monitoring.request_metrics.error_rate)}
+              icon={<ShieldAlert className="w-6 h-6 text-white" />}
+              color="bg-red-700"
+            />
+            <MetricCard
+              title={t('admin.monitoring.requestCount')}
+              value={formatNumber(monitoring.request_metrics.request_count)}
+              icon={<Activity className="w-6 h-6 text-white" />}
+              color="bg-sky-700"
+            />
+            <MetricCard
+              title={t('admin.monitoring.llmFailureRate')}
+              value={formatPercent(maxLlmFailureRate)}
+              icon={<Zap className="w-6 h-6 text-white" />}
+              color="bg-amber-600"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Panel title={t('admin.monitoring.alerts')} icon={<AlertTriangle className="h-5 w-5" />}>
+              {monitoring.alerts.length === 0 ? (
+                <EmptyState>{t('admin.monitoring.noAlerts')}</EmptyState>
+              ) : (
+                <div className="divide-y divide-border">
+                  {monitoring.alerts.map((alert, index) => (
+                    <div key={`${alert.type}-${index}`} className="py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium text-foreground">{alert.type}</p>
+                        <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
+                          {alert.severity}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{alert.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+
+            <Panel title={t('admin.monitoring.llmChannels')} icon={<Gauge className="h-5 w-5" />}>
+              {monitoring.llm_channels.length === 0 ? (
+                <EmptyState>{t('admin.monitoring.noLlmData')}</EmptyState>
+              ) : (
+                <div className="divide-y divide-border">
+                  {monitoring.llm_channels.map((channel) => (
+                    <div key={`${channel.channel}-${channel.key_hash}`} className="py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{channel.channel}</p>
+                          <p className="text-xs text-muted-foreground">{channel.key_hash}</p>
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatPercent(channel.failure_rate)}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-3 text-xs text-muted-foreground">
+                        <span>
+                          {t('admin.monitoring.requests')}: {formatNumber(channel.request_count)}
+                        </span>
+                        <span>
+                          {t('admin.monitoring.errors')}: {formatNumber(channel.error_count)}
+                        </span>
+                        <span>
+                          {t('admin.monitoring.tokens')}: {formatNumber(channel.total_tokens)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Panel title={t('admin.monitoring.tokenAlerts')} icon={<Zap className="h-5 w-5" />}>
+              {monitoring.token_alerts.length === 0 ? (
+                <EmptyState>{t('admin.monitoring.noTokenAlerts')}</EmptyState>
+              ) : (
+                <div className="divide-y divide-border">
+                  {monitoring.token_alerts.map((alert) => (
+                    <div key={alert.user_id} className="py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">{alert.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            #{alert.user_id}
+                            {alert.username ? ` - ${alert.username}` : ''}
+                          </p>
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">
+                          {formatNumber(alert.daily_token_count)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {t('admin.monitoring.threshold')}: {formatNumber(alert.threshold)} -{' '}
+                        {t('admin.monitoring.requests')}: {formatNumber(alert.daily_message_count)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+
+            <Panel
+              title={t('admin.monitoring.qualitySamples')}
+              icon={<MessageSquare className="h-5 w-5" />}
+              action={
+                <span className="text-xs text-muted-foreground">
+                  {monitoring.quality_samples.length}/{monitoring.sample_target}
+                </span>
+              }
+            >
+              {monitoring.quality_samples.length === 0 ? (
+                <EmptyState>{t('admin.monitoring.noQualitySamples')}</EmptyState>
+              ) : (
+                <div className="divide-y divide-border">
+                  {monitoring.quality_samples.map((sample) => (
+                    <div key={sample.message_id} className="py-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {sample.user_email}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            chat #{sample.chat_id} - message #{sample.message_id}
+                          </p>
+                        </div>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(sample.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 max-h-20 overflow-hidden text-sm text-muted-foreground">
+                        {sample.content_preview}
+                      </p>
+                      {sample.token_usage && (
+                        <p className="mt-2 truncate text-xs text-muted-foreground">
+                          {JSON.stringify(sample.token_usage)}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          </div>
+        </section>
+      )}
     </div>
-  );
+  )
 }

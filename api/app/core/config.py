@@ -170,6 +170,24 @@ class Settings:
     COMPLIANCE_SUPPORT_CONTACT: str = (
         _get_env("COMPLIANCE_SUPPORT_CONTACT", default="Deltapex support") or "Deltapex support"
     )
+    MONITORING_WINDOW_SIZE: int = _get_int_env("MONITORING_WINDOW_SIZE", default=5000)
+    MONITORING_P99_ALERT_MS: int = _get_int_env("MONITORING_P99_ALERT_MS", default=5000)
+    MONITORING_ERROR_RATE_ALERT_THRESHOLD: float = _get_float_env(
+        "MONITORING_ERROR_RATE_ALERT_THRESHOLD",
+        default=0.05,
+    )
+    MONITORING_LLM_FAILURE_RATE_ALERT_THRESHOLD: float = _get_float_env(
+        "MONITORING_LLM_FAILURE_RATE_ALERT_THRESHOLD",
+        default=0.10,
+    )
+    MONITORING_TOKEN_ALERT_DAILY_THRESHOLD: int = _get_int_env(
+        "MONITORING_TOKEN_ALERT_DAILY_THRESHOLD",
+        default=100000,
+    )
+    QUALITY_SAMPLE_DAILY_LIMIT: int = _get_int_env("QUALITY_SAMPLE_DAILY_LIMIT", default=50)
+    MONITORING_EXTERNAL_DASHBOARD_URL: str | None = _get_env("MONITORING_EXTERNAL_DASHBOARD_URL")
+    ONE_API_DASHBOARD_URL: str | None = _get_env("ONE_API_DASHBOARD_URL")
+    CLAUDE_METER_DASHBOARD_URL: str | None = _get_env("CLAUDE_METER_DASHBOARD_URL")
 
     STRIPE_PUBLIC_KEY: str | None = _get_env("STRIPE_PUBLIC_KEY")
     STRIPE_PRIVATE_KEY: str | None = _get_env("STRIPE_PRIVATE_KEY")

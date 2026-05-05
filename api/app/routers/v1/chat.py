@@ -1,4 +1,5 @@
 from functools import wraps
+from time import perf_counter
 from typing import Dict, Optional, Tuple, Union
 
 from fastapi import APIRouter, HTTPException
@@ -26,6 +27,7 @@ from app.services.billing_service import BillingService
 from app.services.content_moderation_service import ContentModerationService
 from app.services.memory_service import MemoryService
 from app.services.membership_service import MembershipService
+from app.services.monitoring_service import elapsed_ms, record_agent_call
 from app.services.rate_limit_service import ChatRateLimiter, RateLimitExceeded
 
 chat_router = APIRouter(prefix="/chat")
@@ -114,11 +116,30 @@ async def create_agent_response(
     session=None,
     memory_context: MemoryContext | None = None,
 ) -> Tuple[str, Dict[str, int]]:
-    if agent.source == AgentSource.DIFY:
-        return await create_dify_response(messages, agent, user_id, chat_id, session)
-    if agent.source == AgentSource.FASTGPT:
-        return await create_fastgpt_response(messages, agent, user_id, memory_context)
-    return create_llm_response(messages, agent, memory_context, user_id=user_id, chat_id=chat_id)
+    start_time = perf_counter()
+    try:
+        if agent.source == AgentSource.DIFY:
+            content, usage = await create_dify_response(messages, agent, user_id, chat_id, session)
+        elif agent.source == AgentSource.FASTGPT:
+            content, usage = await create_fastgpt_response(messages, agent, user_id, memory_context)
+        else:
+            content, usage = create_llm_response(messages, agent, memory_context, user_id=user_id, chat_id=chat_id)
+
+        record_agent_call(
+            agent,
+            success=True,
+            latency_ms=elapsed_ms(start_time),
+            total_tokens=usage.get("total_tokens", 0),
+        )
+        return content, usage
+    except Exception as exc:
+        record_agent_call(
+            agent,
+            success=False,
+            latency_ms=elapsed_ms(start_time),
+            error_type=type(exc).__name__,
+        )
+        raise
 
 
 async def create_agent_response_stream(
@@ -129,18 +150,35 @@ async def create_agent_response_stream(
     session=None,
     memory_context: MemoryContext | None = None,
 ):
-    if agent.source == AgentSource.DIFY:
-        async for chunk_data in create_dify_response_stream(messages, agent, user_id, chat_id, session):
-            yield chunk_data
-        return
+    start_time = perf_counter()
+    total_tokens = 0
+    success = False
+    error_type: Optional[str] = None
 
-    if agent.source == AgentSource.FASTGPT:
-        async for chunk_data in create_fastgpt_response_stream(messages, agent, user_id, memory_context):
-            yield chunk_data
-        return
+    try:
+        if agent.source == AgentSource.DIFY:
+            stream = create_dify_response_stream(messages, agent, user_id, chat_id, session)
+        elif agent.source == AgentSource.FASTGPT:
+            stream = create_fastgpt_response_stream(messages, agent, user_id, memory_context)
+        else:
+            stream = create_llm_response_stream(messages, agent, memory_context, user_id=user_id, chat_id=chat_id)
 
-    async for chunk_data in create_llm_response_stream(messages, agent, memory_context, user_id=user_id, chat_id=chat_id):
-        yield chunk_data
+        async for chunk, usage_info in stream:
+            if usage_info:
+                total_tokens = usage_info.get("total_tokens", total_tokens)
+            yield chunk, usage_info
+        success = True
+    except Exception as exc:
+        error_type = type(exc).__name__
+        raise
+    finally:
+        record_agent_call(
+            agent,
+            success=success,
+            latency_ms=elapsed_ms(start_time),
+            total_tokens=total_tokens,
+            error_type=error_type,
+        )
 
 
 async def test_agent_connection_unified(agent: Agent):

@@ -32,6 +32,7 @@ from app.routers.v1.membership import membership_router
 from app.routers.v1.order import order_router
 from app.routers.v1.system import system_router
 from app.routers.v1.user import user_router
+from app.services.monitoring_service import record_request_metric
 from app.utils.db import get_redis_client
 
 # 初始化日志系统
@@ -118,6 +119,12 @@ async def trace_id_middleware(request: Request, call_next):
             request_logger.error("request_error", error_type=error_type, **log_fields)
         else:
             request_logger.info("request_complete", **log_fields)
+        record_request_metric(
+            path=request.url.path,
+            method=request.method,
+            status_code=status_code,
+            latency_ms=latency_ms,
+        )
         reset_trace_id(trace_token)
 
 

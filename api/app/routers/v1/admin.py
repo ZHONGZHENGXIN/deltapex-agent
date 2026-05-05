@@ -28,6 +28,7 @@ from app.schemas.admin import (
     AdminDashboard,
     ChatListResponse,
     ChatSearchParams,
+    MonitoringDashboard,
     UserActionRequest,
     UserCreateRequest,
     UserListResponse,
@@ -46,6 +47,7 @@ from app.schemas.membership import MembershipType
 from app.schemas.user import AccountDeletionAuditListResponse
 from app.services.account_deletion_service import AccountDeletionService
 from app.services.memory_service import MemoryService
+from app.services.monitoring_service import build_monitoring_dashboard
 
 admin_router = APIRouter(prefix="/admin")
 
@@ -58,6 +60,16 @@ async def get_admin_dashboard(
 ) -> AdminDashboard:
     """获取管理员仪表板数据"""
     return await get_dashboard_stats(session)
+
+
+@admin_router.get("/monitoring", response_model=MonitoringDashboard)
+def get_admin_monitoring(
+    session: SessionDep,
+    lang: LangDep,
+    admin_user: User = Depends(verify_admin_user),
+) -> MonitoringDashboard:
+    """鑾峰彇鏈€浣庣洃鎺т华琛ㄦ澘鏁版嵁"""
+    return build_monitoring_dashboard(session)
 
 
 @admin_router.get("/users", response_model=UserListResponse)

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -64,6 +64,66 @@ class AdminDashboard(BaseModel):
     seven_days_revenue: float
     monthly_revenue: float
     total_revenue: float
+
+
+class MonitoringRequestMetrics(BaseModel):
+    window_started_at: Optional[datetime] = None
+    request_count: int
+    error_count: int
+    error_rate: float
+    p99_latency_ms: float
+
+
+class MonitoringLlmChannelMetrics(BaseModel):
+    channel: str
+    key_hash: str
+    request_count: int
+    error_count: int
+    failure_rate: float
+    total_tokens: int
+    p99_latency_ms: float
+
+
+class MonitoringTokenAlert(BaseModel):
+    user_id: int
+    email: str
+    username: Optional[str] = None
+    daily_token_count: int
+    daily_message_count: int
+    threshold: int
+
+
+class MonitoringQualitySample(BaseModel):
+    message_id: int
+    chat_id: int
+    user_id: int
+    user_email: str
+    username: Optional[str] = None
+    created_at: datetime
+    content_preview: str
+    token_usage: Optional[Dict[str, Any]] = None
+
+
+class MonitoringAlert(BaseModel):
+    type: str
+    severity: str
+    message: str
+
+
+class MonitoringExternalLink(BaseModel):
+    label: str
+    url: str
+
+
+class MonitoringDashboard(BaseModel):
+    generated_at: datetime
+    request_metrics: MonitoringRequestMetrics
+    llm_channels: List[MonitoringLlmChannelMetrics]
+    token_alerts: List[MonitoringTokenAlert]
+    quality_samples: List[MonitoringQualitySample]
+    alerts: List[MonitoringAlert]
+    external_links: List[MonitoringExternalLink]
+    sample_target: int
 
 
 class UserCreateRequest(BaseModel):

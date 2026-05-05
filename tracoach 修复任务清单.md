@@ -726,7 +726,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-6 监控仪表盘
 
-**状态:** 未开始
+**状态:** 完成
 **目标:** 上线后能观察性能、错误、key 健康、成本和质量。
 
 **最低指标**
@@ -748,6 +748,12 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - 有 dashboard 链接或截图。
 - 有异常 token 消耗告警规则。
 - 有每日人工抽样队列。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p2_monitoring_dashboard.py -q`，2 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，67 passed；前端 `pnpm exec tsc --noEmit` 通过；`docker compose -f deploy/docker-compose.yaml config --quiet` 与 `docker compose -f deploy-test/docker-compose.yaml config --quiet` 通过。
+
+**实现记录:** 新增 `/api/v1/admin/monitoring` 管理员接口，返回 P99 延迟、API 错误率、请求窗口计数、LLM key/channel 失败率、Token 异常学员、AI 输出人工抽样队列和告警列表；请求中间件记录 API latency/status；LLM/FastGPT/Dify 调用统一记录 channel、key hash、latency、token 和失败类型；管理后台 dashboard 增加监控区，外部 Grafana/one-api/claude-meter 链接可通过 `MONITORING_EXTERNAL_DASHBOARD_URL`、`ONE_API_DASHBOARD_URL`、`CLAUDE_METER_DASHBOARD_URL` 配置补充。
+
+**未闭环项:** 当前为应用内最低监控面板，不替代正式 Grafana/Prometheus。Zeabur 部署后需要在管理后台 `/admin` 页面归档一次截图或链接，并按实际 one-api / claude-meter 地址补充外部 dashboard URL。
 
 **建议 Codex Prompt**
 
@@ -794,7 +800,7 @@ P0 任务额外要求：
 | P2-3 备份与恢复演练 | 配置完成，待首次 Zeabur staging 恢复演练 | pytest: `api/tests/test_p2_backup_recovery_artifacts.py` 4 passed；pytest: `api/tests` 59 passed；deploy/deploy-test compose config 通过 | 新增 Postgres dump/restore、one-api 脱敏导出、cron 示例、恢复 runbook 与演练日志模板；真实 Zeabur staging restore 待人工执行 |
 | P2-4 限流加固 | 完成 | pytest: `api/tests/test_p2_rate_limit_and_atomic_usage.py` 3 passed；pytest: `api/tests` 62 passed；deploy/deploy-test compose config 通过 | Redis 用户级短窗口限流；会员 daily/total counters 改为原子 SQL 累加；429 文案不暴露 Redis/key |
 | P2-5 内容审核与合规 | 完成 | pytest: `api/tests/test_p2_content_moderation.py` 3 passed；pytest: `api/tests` 65 passed；前端 `pnpm exec tsc --noEmit` 通过；deploy/deploy-test compose config 通过 | 关键词规则文件、AI 输出免责声明追加、极端压力人工支持提示、聊天 UI disclaimer、注册协议/隐私勾选；法务口径和 UI 截图待最终发布验收归档 |
-| P2-6 监控仪表盘 | 未开始 |  |  |
+| P2-6 监控仪表盘 | 完成 | pytest: `api/tests/test_p2_monitoring_dashboard.py` 2 passed；pytest: `api/tests` 67 passed；前端 `pnpm exec tsc --noEmit` 通过；deploy/deploy-test compose config 通过 | 新增 `/admin/monitoring` 指标接口和管理后台监控区；覆盖 P99、错误率、key/channel 失败率、Token 异常告警、每日 AI 输出抽样队列；正式外部 Grafana/one-api/claude-meter 链接和 Zeabur 截图待部署后归档 |
 
 ## 灰度上线门槛
 

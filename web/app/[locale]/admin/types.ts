@@ -141,6 +141,66 @@ export interface AdminDashboard {
 
 export type DashboardStats = AdminDashboard;
 
+export interface MonitoringRequestMetrics {
+  window_started_at?: string | null;
+  request_count: number;
+  error_count: number;
+  error_rate: number;
+  p99_latency_ms: number;
+}
+
+export interface MonitoringLlmChannelMetrics {
+  channel: string;
+  key_hash: string;
+  request_count: number;
+  error_count: number;
+  failure_rate: number;
+  total_tokens: number;
+  p99_latency_ms: number;
+}
+
+export interface MonitoringTokenAlert {
+  user_id: number;
+  email: string;
+  username?: string | null;
+  daily_token_count: number;
+  daily_message_count: number;
+  threshold: number;
+}
+
+export interface MonitoringQualitySample {
+  message_id: number;
+  chat_id: number;
+  user_id: number;
+  user_email: string;
+  username?: string | null;
+  created_at: string;
+  content_preview: string;
+  token_usage?: Record<string, unknown> | null;
+}
+
+export interface MonitoringAlert {
+  type: string;
+  severity: string;
+  message: string;
+}
+
+export interface MonitoringExternalLink {
+  label: string;
+  url: string;
+}
+
+export interface MonitoringDashboard {
+  generated_at: string;
+  request_metrics: MonitoringRequestMetrics;
+  llm_channels: MonitoringLlmChannelMetrics[];
+  token_alerts: MonitoringTokenAlert[];
+  quality_samples: MonitoringQualitySample[];
+  alerts: MonitoringAlert[];
+  external_links: MonitoringExternalLink[];
+  sample_target: number;
+}
+
 export interface UserActionRequest {
   action: 'delete' | 'restore';
 }
@@ -216,4 +276,3 @@ export interface UsageLimitCheck {
   remaining_tokens: number;
   remaining_turns: number;
 }
-
