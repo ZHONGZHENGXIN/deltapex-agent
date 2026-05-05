@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy import update
 from sqlmodel import Session, func, select
 
 from app.core.i18n import get_message
@@ -400,6 +401,51 @@ def update_user_usage_stats(db: Session, user_id: int, stats_update: UsageStatsU
         db.commit()
 
         return True
+    except Exception as e:
+        logger.error(f"{get_message('update_user_stats_failed')}: {e}")
+        db.rollback()
+        return False
+
+
+def increment_user_membership_usage_atomic(
+    db: Session,
+    user_id: int,
+    message_count: int = 0,
+    token_count: int = 0,
+    chat_count: int = 0,
+) -> bool:
+    """Atomically increment daily and lifetime membership usage counters."""
+    try:
+        reset_daily_usage(db, user_id)
+
+        membership = get_user_current_membership(db, user_id)
+        if not membership:
+            membership = _create_free_user_membership(db, user_id)
+            if not membership:
+                return False
+
+        now = datetime.utcnow()
+        statement = (
+            update(UserMembership)
+            .where(
+                UserMembership.id == membership.id,
+                UserMembership.user_id == user_id,
+                UserMembership.is_active == True,
+                UserMembership.is_deleted == False,
+            )
+            .values(
+                daily_message_count=func.coalesce(UserMembership.daily_message_count, 0) + message_count,
+                daily_token_count=func.coalesce(UserMembership.daily_token_count, 0) + token_count,
+                daily_chat_count=func.coalesce(UserMembership.daily_chat_count, 0) + chat_count,
+                total_message_count=func.coalesce(UserMembership.total_message_count, 0) + message_count,
+                total_token_count=func.coalesce(UserMembership.total_token_count, 0) + token_count,
+                total_chat_count=func.coalesce(UserMembership.total_chat_count, 0) + chat_count,
+                updated_at=now,
+            )
+        )
+        result = db.execute(statement)
+        db.commit()
+        return getattr(result, "rowcount", 0) == 1
     except Exception as e:
         logger.error(f"{get_message('update_user_stats_failed')}: {e}")
         db.rollback()

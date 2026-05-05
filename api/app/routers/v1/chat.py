@@ -16,7 +16,7 @@ from app.crud.membership import get_chat_turn_count
 from app.crud.message import create_message, get_all_messages, message_to_out, update_message_content
 from app.db.base import get_session
 from app.db.rls import set_rls_context
-from app.dependencies.db import LangDep, SessionDep, UserDep
+from app.dependencies.db import LangDep, RedisDep, SessionDep, UserDep
 from app.models.agent import Agent, AgentSource
 from app.models.user import User, UserType
 from app.schemas.agent import AgentPublic
@@ -25,6 +25,7 @@ from app.schemas.message import MessageCreate, MessageOut, MessageRole, UserMess
 from app.services.billing_service import BillingService
 from app.services.memory_service import MemoryService
 from app.services.membership_service import MembershipService
+from app.services.rate_limit_service import ChatRateLimiter, RateLimitExceeded
 
 chat_router = APIRouter(prefix="/chat")
 chat_logger = get_structured_logger("app.chat")
@@ -185,12 +186,18 @@ async def create_chat_message_api(
     message_in: UserMessageCreate,
     session: SessionDep,
     user: UserDep,
+    redis_client: RedisDep,
     lang: LangDep,
     stream: bool = False,
 ):
     user_id = user.id
     public_chat_id = message_in.chat_id
     MessageLogger.log_message_start(user_id, public_chat_id, len(message_in.content), stream)
+    try:
+        ChatRateLimiter.from_settings().check_message_send(redis_client, user_id)
+    except RateLimitExceeded as exc:
+        MessageLogger.log_api_error("rate_limit", user_id, public_chat_id, str(exc))
+        raise HTTPException(status_code=429, detail=str(exc)) from exc
 
     chat = get_chat_record(public_chat_id, session, user)
     if not chat:

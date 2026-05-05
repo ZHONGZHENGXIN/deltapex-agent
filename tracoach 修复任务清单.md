@@ -659,7 +659,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-4 限流加固
 
-**状态:** 未开始
+**状态:** 完成
 **目标:** 增加分钟级限流和并发原子性，防止刷接口和并发超额。
 
 **涉及位置**
@@ -679,6 +679,10 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - 1 秒内连发 30 条消息被限流。
 - 100 并发请求下，用量计数不超额。
 - 限流错误文案不暴露内部实现。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p2_rate_limit_and_atomic_usage.py -q`，3 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，62 passed；`docker compose -f deploy/docker-compose.yaml config --quiet` 与 `docker compose -f deploy-test/docker-compose.yaml config --quiet` 通过。
+
+**实现记录:** 新增 `ChatRateLimiter`，聊天消息入口按用户维度使用 Redis fixed-window 计数，默认 `CHAT_RATE_LIMIT_MAX_REQUESTS=30`、`CHAT_RATE_LIMIT_WINDOW_SECONDS=1`，超过阈值返回通用 429 文案；`MembershipService.record_usage` 改为调用原子 SQL 累加 daily/total counters，减少并发请求下丢计数风险；部署示例补充限流参数。
 
 **建议 Codex Prompt**
 
@@ -782,7 +786,7 @@ P0 任务额外要求：
 | P2-1 后端测试覆盖 | 完成 | pytest: `api/tests` 49 passed；pytest-cov 关键模块 66.35%，`--cov-fail-under=60` 通过 | 覆盖跨用户访问、prompt 注入/role 伪造、key fallback/mock provider、限流、删除权五类测试 |
 | P2-2 Trace 与结构化日志 | 完成 | pytest: `api/tests/test_p2_trace_logging.py` + 相关测试 19 passed；pytest: `api/tests` 55 passed | 新增 `X-Trace-Id` 中间件、structlog 结构化日志、敏感字段 mask、LLM gateway token/latency/error_type 日志 |
 | P2-3 备份与恢复演练 | 配置完成，待首次 Zeabur staging 恢复演练 | pytest: `api/tests/test_p2_backup_recovery_artifacts.py` 4 passed；pytest: `api/tests` 59 passed；deploy/deploy-test compose config 通过 | 新增 Postgres dump/restore、one-api 脱敏导出、cron 示例、恢复 runbook 与演练日志模板；真实 Zeabur staging restore 待人工执行 |
-| P2-4 限流加固 | 未开始 |  |  |
+| P2-4 限流加固 | 完成 | pytest: `api/tests/test_p2_rate_limit_and_atomic_usage.py` 3 passed；pytest: `api/tests` 62 passed；deploy/deploy-test compose config 通过 | Redis 用户级短窗口限流；会员 daily/total counters 改为原子 SQL 累加；429 文案不暴露 Redis/key |
 | P2-5 内容审核与合规 | 未开始 |  |  |
 | P2-6 监控仪表盘 | 未开始 |  |  |
 

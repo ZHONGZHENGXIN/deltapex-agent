@@ -110,6 +110,9 @@ class Settings:
     REDIS_USER: str = _get_env("REDIS_USER", default="default") or "default"
     REDIS_PASSWORD: str = _get_env("REDIS_PASSWORD", default="123456") or "123456"
     REDIS_DB: int = _get_int_env("REDIS_DB", default=0)
+    CHAT_RATE_LIMIT_ENABLED: bool = _get_bool_env("CHAT_RATE_LIMIT_ENABLED", default=True)
+    CHAT_RATE_LIMIT_MAX_REQUESTS: int = _get_int_env("CHAT_RATE_LIMIT_MAX_REQUESTS", default=30)
+    CHAT_RATE_LIMIT_WINDOW_SECONDS: int = _get_int_env("CHAT_RATE_LIMIT_WINDOW_SECONDS", default=1)
 
     @property
     def REDIS_URL(self) -> str:

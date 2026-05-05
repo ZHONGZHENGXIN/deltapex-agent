@@ -14,10 +14,10 @@ from app.services.supabase_auth import sync_local_user_from_supabase, verify_sup
 
 
 def get_redis(request: Request):
-    return request.app.state.redis
+    return getattr(request.app.state, "redis", None)
 
 
-RedisDep = Annotated[redis.Redis, Depends(get_redis)]
+RedisDep = Annotated[redis.Redis | None, Depends(get_redis)]
 SessionDep = Annotated[Session, Depends(get_session)]
 
 scheme = HTTPBearer()

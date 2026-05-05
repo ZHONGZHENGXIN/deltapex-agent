@@ -16,13 +16,12 @@ from app.crud.membership import (
     get_user_current_membership,
     get_user_daily_usage_with_chat,
     get_user_usage_stats,
+    increment_user_membership_usage_atomic,
     reset_daily_usage,
-    update_daily_usage,
     update_membership_plan,
 )
 from app.crud.membership import update_user_membership as crud_update_user_membership
 from app.crud.membership import (
-    update_user_usage_stats,
     upgrade_user_membership,
 )
 from app.models.membership import MembershipPlan
@@ -34,7 +33,6 @@ from app.schemas.membership import (
     UpgradeRequest,
     UpgradeResponse,
     UsageLimitCheck,
-    UsageStatsUpdate,
     UserMembershipCreate,
     UserUsageStats,
 )
@@ -206,17 +204,13 @@ class MembershipService:
         try:
             # 更新每日使用量（用于限制检查）
             chat_count_increment = 1 if is_new_chat else 0
-            update_daily_usage(self.db, user_id, message_count, token_count, chat_count_increment)
-
-            # 更新用户统计数据（替代原来的 usage_record 表）
-            stats_update = UsageStatsUpdate(
-                message_count_increment=message_count,
-                token_count_increment=token_count,
-                chat_count_increment=chat_count_increment,
+            return increment_user_membership_usage_atomic(
+                self.db,
+                user_id,
+                message_count=message_count,
+                token_count=token_count,
+                chat_count=chat_count_increment,
             )
-            update_user_usage_stats(self.db, user_id, stats_update)
-
-            return True
         except Exception as e:
             logger.error(f"{get_message('record_usage_service_failed')}: {e}")
             return False
