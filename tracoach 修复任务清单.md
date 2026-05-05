@@ -487,9 +487,9 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P1-5 学员级删除权
 
-**状态:** 代码完成，待部署执行迁移
-**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_account_deletion.py -q`，5 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，45 passed；`pnpm exec tsc --noEmit` 通过。
-**范围说明:** 新增学员自助删除接口、删除审计表、管理员审计查询接口和前端个人中心删除入口。对话、消息、画像、摘要、会员关系和 token 钱包删除；订单和充值订单保留财务必要字段但清空 provider/customer/raw payload/备注等可识别字段。生产需执行 Alembic 到 `d20260504p15`。
+**状态:** 完成
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p1_account_deletion.py -q`，5 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，45 passed；`pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `d20260504p15`。
+**范围说明:** 新增学员自助删除接口、删除审计表、管理员审计查询接口和前端个人中心删除入口。对话、消息、画像、摘要、会员关系和 token 钱包删除；订单和充值订单保留财务必要字段但清空 provider/customer/raw payload/备注等可识别字段。
 **目标:** 学员可以发起账号和对话数据删除，后端可完整删除或合规匿名化。
 
 **问题**
@@ -762,7 +762,7 @@ P0 任务额外要求：
 | P1-2 Dify 路径处理 | 完成 | pytest: `api/tests/test_p1_dify_student_disabled.py` 4 passed | 普通学员 active agents 不返回 Dify；直接创建 Dify chat 或向已有 Dify chat 发消息均返回 403；管理员仍可看到 Dify agent |
 | P1-3 流式窗口 bug 修复 | 完成 | pytest: `api/tests/test_p1_recent_message_window.py` 3 passed；pytest: `api/tests` 38 passed | LLM/FastGPT 统一使用最近 `AGENT_CONTEXT_WINDOW_MESSAGES` 条消息，默认 20 |
 | P1-4 长对话上下文管理 | 完成 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed；Zeabur Alembic current 已到 `c20260504p14` | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
-| P1-5 学员级删除权 | 代码完成，待部署执行迁移 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过 | 新增 `account_deletion_audits` migration，生产需执行到 `d20260504p15`；财务凭证保留期仍需 Alex/法务确认 |
+| P1-5 学员级删除权 | 完成 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `d20260504p15` | 新增 `account_deletion_audits` migration；财务凭证保留期仍需 Alex/法务确认 |
 | P2-1 后端测试覆盖 | 未开始 |  |  |
 | P2-2 Trace 与结构化日志 | 未开始 |  |  |
 | P2-3 备份与恢复演练 | 未开始 |  |  |
