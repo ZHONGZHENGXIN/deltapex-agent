@@ -537,7 +537,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-1 后端测试覆盖
 
-**状态:** 未开始
+**状态:** 完成
 **目标:** 建立覆盖关键安全路径的后端测试集。
 
 **任务范围**
@@ -561,6 +561,10 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - `api/tests/` 至少包含上述 5 类测试。
 - 关键模块覆盖率达到 60%+。
 - 所有测试可在本地一条命令运行。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，49 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests --cov=app.routers.v1.chat --cov=app.agents.llm --cov=app.services.account_deletion_service --cov=app.services.memory_service --cov=app.crud.chat --cov=app.crud.message --cov-report=term-missing --cov-fail-under=60 -q`，49 passed，关键模块覆盖率 66.35%。
+
+**覆盖映射:** 跨用户访问 `api/tests/test_cross_user_access.py`；prompt 注入/role 伪造 `api/tests/test_p0_agent_message_security.py` 与 `api/tests/test_p2_prompt_injection_and_limits.py`；key fallback/mock provider `api/tests/test_p1_llm_gateway.py`；限流 `api/tests/test_p2_prompt_injection_and_limits.py`；删除权 `api/tests/test_p1_account_deletion.py`。
 
 **建议 Codex Prompt**
 
@@ -763,7 +767,7 @@ P0 任务额外要求：
 | P1-3 流式窗口 bug 修复 | 完成 | pytest: `api/tests/test_p1_recent_message_window.py` 3 passed；pytest: `api/tests` 38 passed | LLM/FastGPT 统一使用最近 `AGENT_CONTEXT_WINDOW_MESSAGES` 条消息，默认 20 |
 | P1-4 长对话上下文管理 | 完成 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed；Zeabur Alembic current 已到 `c20260504p14` | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
 | P1-5 学员级删除权 | 完成 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `d20260504p15` | 新增 `account_deletion_audits` migration；财务凭证保留期仍需 Alex/法务确认 |
-| P2-1 后端测试覆盖 | 未开始 |  |  |
+| P2-1 后端测试覆盖 | 完成 | pytest: `api/tests` 49 passed；pytest-cov 关键模块 66.35%，`--cov-fail-under=60` 通过 | 覆盖跨用户访问、prompt 注入/role 伪造、key fallback/mock provider、限流、删除权五类测试 |
 | P2-2 Trace 与结构化日志 | 未开始 |  |  |
 | P2-3 备份与恢复演练 | 未开始 |  |  |
 | P2-4 限流加固 | 未开始 |  |  |

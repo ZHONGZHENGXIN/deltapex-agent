@@ -4,11 +4,12 @@ from types import SimpleNamespace
 import pytest
 from sqlmodel import Session, create_engine, select
 
-from app.agents.llm import build_llm_client_config, normalize_openai_base_url
+from app.agents.llm import build_llm_client_config, create_llm_response, normalize_openai_base_url
 from app.core.config import settings
 from app.crud.agent import DEFAULT_AGENT_NAME, GATEWAY_API_KEY_PLACEHOLDER, create_agent, create_default_agent, update_agent
 from app.models.agent import Agent, AgentSource
 from app.schemas.agent import AgentCreate, AgentUpdate
+from app.schemas.message import MessageOut, MessageRole
 
 
 def _agent(**overrides) -> SimpleNamespace:
@@ -203,3 +204,52 @@ def test_llm_agent_update_does_not_store_submitted_provider_key(monkeypatch):
     assert agent is not None
     assert agent.api_url == "http://one-api:3000/v1"
     assert agent.api_key == GATEWAY_API_KEY_PLACEHOLDER
+
+
+def test_llm_response_uses_gateway_key_with_mock_provider(monkeypatch):
+    monkeypatch.setattr(settings, "LLM_GATEWAY_ENABLED", True)
+    monkeypatch.setattr(settings, "LLM_GATEWAY_BASE_URL", "http://one-api:3000/v1")
+    monkeypatch.setattr(settings, "LLM_GATEWAY_API_KEY", "one-api-token")
+    monkeypatch.setattr(settings, "LLM_GATEWAY_MODEL_NAME", "gateway-model")
+
+    captured = {}
+
+    class FakeCompletions:
+        def create(self, **params):
+            captured["params"] = params
+            return SimpleNamespace(
+                usage=SimpleNamespace(prompt_tokens=3, completion_tokens=4, total_tokens=7),
+                choices=[SimpleNamespace(message=SimpleNamespace(content="gateway ok"))],
+            )
+
+    class FakeClient:
+        def __init__(self, *, api_key, base_url):
+            captured["api_key"] = api_key
+            captured["base_url"] = base_url
+            self.chat = SimpleNamespace(completions=FakeCompletions())
+
+    monkeypatch.setattr("app.agents.llm.OpenAI", FakeClient)
+
+    content, usage = create_llm_response(
+        [
+            MessageOut(
+                id=1,
+                chat_id="11111111-1111-4111-8111-111111111111",
+                content="hello",
+                role=MessageRole.USER,
+                model_conf=None,
+                is_deleted=False,
+                created_at=datetime(2026, 1, 1),
+                updated_at=datetime(2026, 1, 1),
+                token_usage=None,
+            )
+        ],
+        _agent(api_key="provider-secret-key"),
+    )
+
+    assert content == "gateway ok"
+    assert usage == {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
+    assert captured["api_key"] == "one-api-token"
+    assert captured["api_key"] != "provider-secret-key"
+    assert captured["base_url"] == "http://one-api:3000/v1"
+    assert captured["params"]["model"] == "gateway-model"
