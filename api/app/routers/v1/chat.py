@@ -1,4 +1,3 @@
-import traceback
 from functools import wraps
 from typing import Dict, Optional, Tuple, Union
 
@@ -10,6 +9,7 @@ from app.agents.dify import create_dify_response, create_dify_response_stream, t
 from app.agents.fastgpt import create_fastgpt_response, create_fastgpt_response_stream, test_fastgpt_connection
 from app.agents.llm import create_llm_response, create_llm_response_stream, estimate_conversation_tokens, test_agent_connection
 from app.core.i18n import get_message
+from app.core.logging import get_structured_logger, get_trace_id, reset_trace_id, set_trace_id
 from app.crud.agent import get_active_agents, get_agent_detail
 from app.crud.chat import chat_to_out, create_chat, get_all_chats, get_chat, get_chat_record, soft_delete_chat, update_chat
 from app.crud.membership import get_chat_turn_count
@@ -27,42 +27,69 @@ from app.services.memory_service import MemoryService
 from app.services.membership_service import MembershipService
 
 chat_router = APIRouter(prefix="/chat")
+chat_logger = get_structured_logger("app.chat")
 
 
 class MessageLogger:
     @staticmethod
     def log_message_start(user_id: int, chat_id: Union[int, str], content_length: int, is_stream: bool = False):
-        print(
-            f"[message:start] user_id={user_id} chat_id={chat_id} content_length={content_length} stream={is_stream}"
+        chat_logger.info(
+            "chat_message_start",
+            user_id=user_id,
+            chat_id=chat_id,
+            content_length=content_length,
+            stream=is_stream,
         )
 
     @staticmethod
     def log_user_message_saved(message_id: int, chat_id: Union[int, str]):
-        print(f"[message:saved] message_id={message_id} chat_id={chat_id}")
+        chat_logger.info("chat_user_message_saved", message_id=message_id, chat_id=chat_id)
 
     @staticmethod
     def log_ai_response_start(agent_id: int, is_stream: bool = False):
-        print(f"[ai:start] agent_id={agent_id} stream={is_stream}")
+        chat_logger.info("chat_ai_response_start", agent_id=agent_id, stream=is_stream)
 
     @staticmethod
     def log_ai_response_success(message_id: int, content_length: int, tokens: int):
-        print(f"[ai:success] message_id={message_id} content_length={content_length} tokens={tokens}")
+        chat_logger.info(
+            "chat_ai_response_success",
+            message_id=message_id,
+            content_length=content_length,
+            total_tokens=tokens,
+        )
 
     @staticmethod
-    def log_ai_response_error(error: str, chat_id: Union[int, str]):
-        print(f"[ai:error] chat_id={chat_id} error={error}")
+    def log_ai_response_error(error: Exception | str, chat_id: Union[int, str]):
+        chat_logger.error(
+            "chat_ai_response_error",
+            chat_id=chat_id,
+            error_type=type(error).__name__ if isinstance(error, Exception) else "provider_error",
+            error=str(error),
+        )
 
     @staticmethod
     def log_stream_progress(message_id: int, chunks: int, content_length: int):
-        print(f"[stream:progress] message_id={message_id} chunks={chunks} content_length={content_length}")
+        chat_logger.info(
+            "chat_stream_progress",
+            message_id=message_id,
+            chunks=chunks,
+            content_length=content_length,
+        )
 
     @staticmethod
     def log_usage_recorded(user_id: int, chat_id: Union[int, str], tokens: int):
-        print(f"[usage] user_id={user_id} chat_id={chat_id} tokens={tokens}")
+        chat_logger.info("chat_usage_recorded", user_id=user_id, chat_id=chat_id, total_tokens=tokens)
 
     @staticmethod
-    def log_api_error(function_name: str, user_id: int, chat_id: Union[int, str], error: str):
-        print(f"[api:error] function={function_name} user_id={user_id} chat_id={chat_id} error={error}")
+    def log_api_error(function_name: str, user_id: int, chat_id: Union[int, str], error: Exception | str):
+        chat_logger.error(
+            "chat_api_error",
+            function=function_name,
+            user_id=user_id,
+            chat_id=chat_id,
+            error_type=type(error).__name__ if isinstance(error, Exception) else "application_error",
+            error=str(error),
+        )
 
 
 def ensure_message_logging(func):
@@ -71,7 +98,7 @@ def ensure_message_logging(func):
         try:
             return await func(*args, **kwargs)
         except Exception as exc:
-            MessageLogger.log_api_error(func.__name__, 0, 0, traceback.format_exc())
+            MessageLogger.log_api_error(func.__name__, 0, 0, exc)
             raise exc
 
     return wrapper
@@ -89,7 +116,7 @@ async def create_agent_response(
         return await create_dify_response(messages, agent, user_id, chat_id, session)
     if agent.source == AgentSource.FASTGPT:
         return await create_fastgpt_response(messages, agent, user_id, memory_context)
-    return create_llm_response(messages, agent, memory_context)
+    return create_llm_response(messages, agent, memory_context, user_id=user_id, chat_id=chat_id)
 
 
 async def create_agent_response_stream(
@@ -110,7 +137,7 @@ async def create_agent_response_stream(
             yield chunk_data
         return
 
-    async for chunk_data in create_llm_response_stream(messages, agent, memory_context):
+    async for chunk_data in create_llm_response_stream(messages, agent, memory_context, user_id=user_id, chat_id=chat_id):
         yield chunk_data
 
 
@@ -255,7 +282,7 @@ async def create_chat_message_api(
             MessageLogger.log_usage_recorded(user_id, public_chat_id, total_tokens)
             return [user_message_out, message_to_out(assistant_message, public_chat_id)]
         except Exception as exc:
-            MessageLogger.log_ai_response_error(str(exc), public_chat_id)
+            MessageLogger.log_ai_response_error(exc, public_chat_id)
             assistant_message = create_message(
                 MessageCreate(
                     chat_id=internal_chat_id,
@@ -268,7 +295,10 @@ async def create_chat_message_api(
             membership_service.record_usage(user_id, internal_chat_id, 1, 0)
             return [user_message_out, message_to_out(assistant_message, public_chat_id)]
 
+    stream_trace_id = get_trace_id()
+
     async def stream_gen():
+        trace_token = set_trace_id(stream_trace_id)
         MessageLogger.log_ai_response_start(chat.agent_id, True)
         content_acc = ""
         chunk_count = 0
@@ -329,15 +359,21 @@ async def create_chat_message_api(
                             f"{final_usage_info['completion_tokens']},{final_usage_info['total_tokens']}__END__"
                         )
         except Exception as exc:
-            MessageLogger.log_ai_response_error(str(exc), public_chat_id)
+            MessageLogger.log_ai_response_error(exc, public_chat_id)
             if message_id:
                 with next(get_session()) as error_session:
                     set_rls_context(error_session, user_id=user_id)
-                    error_content = content_acc + f"\n\n[response interrupted: {exc}]" if content_acc else f"AI response failed: {exc}"
+                    error_content = (
+                        content_acc + f"\n\n[response interrupted: {exc}]"
+                        if content_acc
+                        else f"AI response failed: {exc}"
+                    )
                     update_message_content(message_id, error_content, error_session, user_id=user_id)
                     MembershipService(error_session).record_usage(user_id, internal_chat_id, 1, 0)
                     error_session.commit()
             raise exc
+        finally:
+            reset_trace_id(trace_token)
 
     return StreamingResponse(stream_gen(), media_type="text/plain")
 

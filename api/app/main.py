@@ -1,14 +1,23 @@
 from contextlib import asynccontextmanager
+from time import perf_counter
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import ValidationError
 
 from app.core.config import settings
 from app.core.exceptions import http_exception_handler, validation_exception_handler
-from app.core.logging import get_logger, setup_logging
+from app.core.logging import (
+    get_logger,
+    get_structured_logger,
+    get_trace_id,
+    reset_trace_id,
+    sanitize_trace_id,
+    set_trace_id,
+    setup_logging,
+)
 from app.db.base import (
     create_db_and_tables,
     init_default_agent,
@@ -28,6 +37,7 @@ from app.utils.db import get_redis_client
 # 初始化日志系统
 setup_logging()
 logger = get_logger(__name__)
+request_logger = get_structured_logger("app.request")
 
 BASE_PREFIX = "/api/v1"
 
@@ -75,6 +85,40 @@ app = FastAPI(
     docs_url=f"{BASE_PREFIX}/docs",
     redoc_url=f"{BASE_PREFIX}/redoc"
 )
+
+
+@app.middleware("http")
+async def trace_id_middleware(request: Request, call_next):
+    incoming_trace_id = request.headers.get(settings.TRACE_ID_HEADER) or request.headers.get("X-Request-Id")
+    trace_id = sanitize_trace_id(incoming_trace_id)
+    trace_token = set_trace_id(trace_id)
+    start_time = perf_counter()
+    status_code = 500
+    error_type = None
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        response.headers[settings.TRACE_ID_HEADER] = get_trace_id() or trace_id or ""
+        return response
+    except Exception as exc:
+        error_type = type(exc).__name__
+        raise
+    finally:
+        latency_ms = round((perf_counter() - start_time) * 1000, 2)
+        log_fields = {
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": status_code,
+            "latency_ms": latency_ms,
+            "log_hot_retention_days": settings.LOG_HOT_RETENTION_DAYS,
+            "log_cold_retention_days": settings.LOG_COLD_RETENTION_DAYS,
+        }
+        if error_type:
+            request_logger.error("request_error", error_type=error_type, **log_fields)
+        else:
+            request_logger.info("request_complete", **log_fields)
+        reset_trace_id(trace_token)
 
 
 # healthcheck endpoint

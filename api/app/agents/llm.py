@@ -8,8 +8,12 @@ from openai import OpenAI, AsyncOpenAI
 from app.agents.context import MemoryContext, build_provider_messages
 from app.core.config import settings
 from app.core.i18n import get_message
+from app.core.logging import get_structured_logger, key_fingerprint
 from app.models.agent import Agent
 from app.schemas.message import MessageOut
+
+
+llm_logger = get_structured_logger("app.llm_gateway")
 
 
 @dataclass(frozen=True)
@@ -139,7 +143,7 @@ def estimate_conversation_tokens(messages: list[MessageOut], new_message_content
     return total_tokens
 
 
-def create_llm_response(
+def _create_llm_response_unlogged(
     messages: list[MessageOut],
     agent: Optional[Agent] = None,
     memory_context: MemoryContext | None = None,
@@ -159,7 +163,7 @@ def create_llm_response(
     return response.choices[0].message.content, usage_info
 
 
-async def create_llm_response_stream(
+async def _create_llm_response_stream_unlogged(
     messages: list[MessageOut],
     agent: Optional[Agent] = None,
     memory_context: MemoryContext | None = None,
@@ -202,6 +206,136 @@ async def create_llm_response_stream(
             }
             # 返回空内容和 usage 信息
             yield "", usage_info
+
+
+def create_llm_response(
+    messages: list[MessageOut],
+    agent: Optional[Agent] = None,
+    memory_context: MemoryContext | None = None,
+    *,
+    user_id: int | None = None,
+    chat_id: int | None = None,
+) -> Tuple[str, Dict[str, int]]:
+    start_time = time.perf_counter()
+    config: LLMClientConfig | None = None
+    try:
+        config = build_llm_client_config(agent)
+        provider_messages = build_provider_messages(messages, memory_context=memory_context)
+        client = OpenAI(api_key=config.api_key, base_url=config.base_url)
+        params = build_chat_params(provider_messages, config)
+        llm_logger.info(
+            "llm_request_start",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model,
+            key_hash=key_fingerprint(config.api_key),
+            gateway_enabled=config.gateway_enabled,
+            message_count=len(provider_messages),
+        )
+        response = client.chat.completions.create(**params)
+
+        usage_info = {
+            "prompt_tokens": response.usage.prompt_tokens if response.usage else 0,
+            "completion_tokens": response.usage.completion_tokens if response.usage else 0,
+            "total_tokens": response.usage.total_tokens if response.usage else 0,
+        }
+        llm_logger.info(
+            "llm_request_success",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model,
+            key_hash=key_fingerprint(config.api_key),
+            gateway_enabled=config.gateway_enabled,
+            input_tokens=usage_info["prompt_tokens"],
+            output_tokens=usage_info["completion_tokens"],
+            total_tokens=usage_info["total_tokens"],
+            latency_ms=round((time.perf_counter() - start_time) * 1000, 2),
+        )
+        return response.choices[0].message.content, usage_info
+    except Exception as exc:
+        llm_logger.error(
+            "llm_request_error",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model if config else settings.AGENT_MODEL_NAME,
+            key_hash=key_fingerprint(config.api_key) if config else None,
+            gateway_enabled=config.gateway_enabled if config else settings.LLM_GATEWAY_ENABLED,
+            latency_ms=round((time.perf_counter() - start_time) * 1000, 2),
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        raise
+
+
+async def create_llm_response_stream(
+    messages: list[MessageOut],
+    agent: Optional[Agent] = None,
+    memory_context: MemoryContext | None = None,
+    *,
+    user_id: int | None = None,
+    chat_id: int | None = None,
+) -> AsyncIterator[Tuple[str, Optional[Dict[str, int]]]]:
+    start_time = time.perf_counter()
+    config: LLMClientConfig | None = None
+    final_usage_info: Dict[str, int] | None = None
+    chunk_count = 0
+    try:
+        config = build_llm_client_config(agent)
+        provider_messages = build_provider_messages(messages, memory_context=memory_context)
+        client = AsyncOpenAI(api_key=config.api_key, base_url=config.base_url)
+        params = build_chat_params(provider_messages, config, stream=True)
+        llm_logger.info(
+            "llm_stream_start",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model,
+            key_hash=key_fingerprint(config.api_key),
+            gateway_enabled=config.gateway_enabled,
+            message_count=len(provider_messages),
+        )
+        stream = await client.chat.completions.create(**params)
+
+        async for chunk in stream:
+            content = chunk.choices[0].delta.content if chunk.choices[0].delta else None
+            if content:
+                chunk_count += 1
+                yield content, None
+
+            if hasattr(chunk, "usage") and chunk.usage:
+                final_usage_info = {
+                    "prompt_tokens": chunk.usage.prompt_tokens,
+                    "completion_tokens": chunk.usage.completion_tokens,
+                    "total_tokens": chunk.usage.total_tokens,
+                }
+                yield "", final_usage_info
+
+        usage_info = final_usage_info or {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        llm_logger.info(
+            "llm_stream_success",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model,
+            key_hash=key_fingerprint(config.api_key),
+            gateway_enabled=config.gateway_enabled,
+            input_tokens=usage_info["prompt_tokens"],
+            output_tokens=usage_info["completion_tokens"],
+            total_tokens=usage_info["total_tokens"],
+            chunk_count=chunk_count,
+            latency_ms=round((time.perf_counter() - start_time) * 1000, 2),
+        )
+    except Exception as exc:
+        llm_logger.error(
+            "llm_stream_error",
+            user_id=user_id,
+            chat_id=chat_id,
+            model=config.model if config else settings.AGENT_MODEL_NAME,
+            key_hash=key_fingerprint(config.api_key) if config else None,
+            gateway_enabled=config.gateway_enabled if config else settings.LLM_GATEWAY_ENABLED,
+            latency_ms=round((time.perf_counter() - start_time) * 1000, 2),
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
+        raise
 
 
 async def test_agent_connection(agent: Agent) -> Dict[str, Any]:

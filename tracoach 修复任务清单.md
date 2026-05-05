@@ -576,7 +576,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-2 Trace 与结构化日志
 
-**状态:** 未开始
+**状态:** 完成
 **目标:** 每个请求都能通过 `trace_id` 追踪完整链路。
 
 **问题**
@@ -603,6 +603,12 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - 任意 `trace_id` 能查到完整聊天请求链路。
 - 日志中没有明文 API key 或用户邮箱。
 - LLM 错误能按类型检索。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p2_trace_logging.py api/tests/test_p1_llm_gateway.py api/tests/test_p2_prompt_injection_and_limits.py -q`，19 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，55 passed。
+
+**实现记录:** FastAPI 请求入口透传或生成 `X-Trace-Id`；chat router 已移除 `print` 并使用结构化日志；LLM gateway 记录 `model/key_hash/input_tokens/output_tokens/total_tokens/latency_ms/error_type`；日志字段统一 mask API key、Authorization、password、secret、邮箱；日志保留策略默认 30 天热数据、90 天冷归档，可通过 `LOG_HOT_RETENTION_DAYS` 与 `LOG_COLD_RETENTION_DAYS` 配置。
+
+**验证方法:** 请求任意 API 时带 `X-Trace-Id: trace-xxx`，响应头应回传同一值；在应用日志中搜索该 trace id，可串起 `request_*`、`chat_*`、`llm_*` 事件。
 
 **建议 Codex Prompt**
 
@@ -768,7 +774,7 @@ P0 任务额外要求：
 | P1-4 长对话上下文管理 | 完成 | pytest: `api/tests/test_p1_memory_context.py` + `api/tests/test_p1_recent_message_window.py` 5 passed；pytest: `api/tests` 40 passed；Zeabur Alembic current 已到 `c20260504p14` | 新增 `student_profiles` / `chat_summaries`、RLS migration、`memory_service`；provider 上下文由画像、滚动摘要、最近窗口组成；管理员可查 `/admin/users/{user_id}/memory` |
 | P1-5 学员级删除权 | 完成 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `d20260504p15` | 新增 `account_deletion_audits` migration；财务凭证保留期仍需 Alex/法务确认 |
 | P2-1 后端测试覆盖 | 完成 | pytest: `api/tests` 49 passed；pytest-cov 关键模块 66.35%，`--cov-fail-under=60` 通过 | 覆盖跨用户访问、prompt 注入/role 伪造、key fallback/mock provider、限流、删除权五类测试 |
-| P2-2 Trace 与结构化日志 | 未开始 |  |  |
+| P2-2 Trace 与结构化日志 | 完成 | pytest: `api/tests/test_p2_trace_logging.py` + 相关测试 19 passed；pytest: `api/tests` 55 passed | 新增 `X-Trace-Id` 中间件、structlog 结构化日志、敏感字段 mask、LLM gateway token/latency/error_type 日志 |
 | P2-3 备份与恢复演练 | 未开始 |  |  |
 | P2-4 限流加固 | 未开始 |  |  |
 | P2-5 内容审核与合规 | 未开始 |  |  |

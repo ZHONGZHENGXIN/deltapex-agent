@@ -56,6 +56,9 @@ class Settings:
     API_HOST: str = _get_env("API_HOST", default="0.0.0.0") or "0.0.0.0"
     API_PORT: int = _get_int_env("API_PORT", "PORT", default=8000)
     API_RELOAD: bool = _get_bool_env("API_RELOAD", default=False)
+    TRACE_ID_HEADER: str = _get_env("TRACE_ID_HEADER", default="X-Trace-Id") or "X-Trace-Id"
+    LOG_HOT_RETENTION_DAYS: int = _get_int_env("LOG_HOT_RETENTION_DAYS", default=30)
+    LOG_COLD_RETENTION_DAYS: int = _get_int_env("LOG_COLD_RETENTION_DAYS", default=90)
 
     POSTGRES_HOST: str = _get_env("POSTGRES_HOST", "DATABASE_HOST", default="localhost") or "localhost"
     POSTGRES_PORT: int = _get_int_env("POSTGRES_PORT", "DATABASE_PORT", default=5432)
