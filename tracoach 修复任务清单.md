@@ -694,7 +694,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-5 内容审核与合规声明
 
-**状态:** 未开始
+**状态:** 完成
 **目标:** 对金融场景输出进行最低限度审核，并在产品显著位置展示 AI 局限声明。
 
 **任务范围**
@@ -709,6 +709,12 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - 关键词规则文件可维护。
 - UI 有 disclaimer 截图。
 - 极端文本触发时，用户能看到人工客服联系信息。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p2_content_moderation.py -q`，3 passed；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，65 passed；`pnpm exec tsc --noEmit` 通过；`docker compose -f deploy/docker-compose.yaml config --quiet` 与 `docker compose -f deploy-test/docker-compose.yaml config --quiet` 通过。
+
+**实现记录:** 新增 `api/app/core/content_moderation_rules.json` 作为可维护关键词规则；后端对 assistant 输出扫描“保证赚钱/无风险/必涨”等承诺类表述并追加投资建议免责声明；用户输入命中“自杀/不想活/严重亏损/爆仓”等极端压力关键词时，跳过 LLM 并返回人工支持与紧急救援提示；聊天 UI 常驻“AI 内容不构成投资建议”声明；注册页增加学员协议与隐私政策勾选，并写入 Supabase signup metadata。
+
+**未闭环项:** 当前为关键词级最低护栏，不替代法务确认。正式公开发布前仍需 Alex/法务确认最终协议、隐私政策、客服联系方式和金融合规口径；UI 截图需在 Zeabur 或本地浏览器最终验收时归档。
 
 **建议 Codex Prompt**
 
@@ -787,7 +793,7 @@ P0 任务额外要求：
 | P2-2 Trace 与结构化日志 | 完成 | pytest: `api/tests/test_p2_trace_logging.py` + 相关测试 19 passed；pytest: `api/tests` 55 passed | 新增 `X-Trace-Id` 中间件、structlog 结构化日志、敏感字段 mask、LLM gateway token/latency/error_type 日志 |
 | P2-3 备份与恢复演练 | 配置完成，待首次 Zeabur staging 恢复演练 | pytest: `api/tests/test_p2_backup_recovery_artifacts.py` 4 passed；pytest: `api/tests` 59 passed；deploy/deploy-test compose config 通过 | 新增 Postgres dump/restore、one-api 脱敏导出、cron 示例、恢复 runbook 与演练日志模板；真实 Zeabur staging restore 待人工执行 |
 | P2-4 限流加固 | 完成 | pytest: `api/tests/test_p2_rate_limit_and_atomic_usage.py` 3 passed；pytest: `api/tests` 62 passed；deploy/deploy-test compose config 通过 | Redis 用户级短窗口限流；会员 daily/total counters 改为原子 SQL 累加；429 文案不暴露 Redis/key |
-| P2-5 内容审核与合规 | 未开始 |  |  |
+| P2-5 内容审核与合规 | 完成 | pytest: `api/tests/test_p2_content_moderation.py` 3 passed；pytest: `api/tests` 65 passed；前端 `pnpm exec tsc --noEmit` 通过；deploy/deploy-test compose config 通过 | 关键词规则文件、AI 输出免责声明追加、极端压力人工支持提示、聊天 UI disclaimer、注册协议/隐私勾选；法务口径和 UI 截图待最终发布验收归档 |
 | P2-6 监控仪表盘 | 未开始 |  |  |
 
 ## 灰度上线门槛

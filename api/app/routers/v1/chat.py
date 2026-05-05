@@ -23,6 +23,7 @@ from app.schemas.agent import AgentPublic
 from app.schemas.chat import ChatCreate, ChatOut, ChatUpdate
 from app.schemas.message import MessageCreate, MessageOut, MessageRole, UserMessageCreate
 from app.services.billing_service import BillingService
+from app.services.content_moderation_service import ContentModerationService
 from app.services.memory_service import MemoryService
 from app.services.membership_service import MembershipService
 from app.services.rate_limit_service import ChatRateLimiter, RateLimitExceeded
@@ -164,6 +165,10 @@ def _calculate_paid_tokens(total_tokens: int, remaining_free_tokens_before_reque
     return max(0, total_tokens - free_used)
 
 
+async def _single_chunk_stream(content: str):
+    yield content
+
+
 @chat_router.post("", response_model=ChatOut)
 async def create_chat_api(chat_in: ChatCreate, session: SessionDep, user: UserDep, lang: LangDep) -> ChatOut:
     if chat_in.agent_id:
@@ -239,6 +244,9 @@ async def create_chat_message_api(
     )
     remaining_free_tokens_before_request = balance_check.remaining_free_tokens
 
+    moderation_service = ContentModerationService()
+    user_moderation = moderation_service.inspect(message_in.content)
+
     user_message = create_message(
         MessageCreate(
             chat_id=internal_chat_id,
@@ -251,6 +259,29 @@ async def create_chat_message_api(
     user_message_out = message_to_out(user_message, public_chat_id)
     messages.append(user_message_out)
     MessageLogger.log_user_message_saved(user_message.id, public_chat_id)
+
+    if user_moderation.has_distress:
+        support_content = moderation_service.build_distress_response(
+            lang,
+            user_id=user_id,
+            chat_id=public_chat_id,
+            user_text=message_in.content,
+        )
+        assistant_message = create_message(
+            MessageCreate(
+                chat_id=internal_chat_id,
+                user_id=user_id,
+                content=support_content,
+                role=MessageRole.ASSISTANT,
+            ),
+            session,
+        )
+        membership_service.record_usage(user_id, internal_chat_id, 1, 0)
+        MessageLogger.log_usage_recorded(user_id, public_chat_id, 0)
+        if stream:
+            return StreamingResponse(_single_chunk_stream(support_content), media_type="text/plain")
+        return [user_message_out, message_to_out(assistant_message, public_chat_id)]
+
     memory_context = MemoryService(session).prepare_memory_context(
         user_id=user_id,
         chat_id=internal_chat_id,
@@ -267,6 +298,12 @@ async def create_chat_message_api(
                 internal_chat_id,
                 session,
                 memory_context,
+            )
+            llm_response_content = moderation_service.moderate_assistant_output(
+                llm_response_content,
+                lang,
+                user_id=user_id,
+                chat_id=public_chat_id,
             )
             assistant_message = create_message(
                 MessageCreate(
@@ -348,6 +385,15 @@ async def create_chat_message_api(
             if message_id:
                 with next(get_session()) as final_session:
                     set_rls_context(final_session, user_id=user_id)
+                    moderated_content = moderation_service.moderate_assistant_output(
+                        content_acc,
+                        lang,
+                        user_id=user_id,
+                        chat_id=public_chat_id,
+                    )
+                    if moderated_content != content_acc:
+                        yield moderated_content[len(content_acc) :]
+                        content_acc = moderated_content
                     update_message_content(message_id, content_acc, final_session, final_usage_info, user_id=user_id)
                     total_tokens = final_usage_info.get("total_tokens", 0) if final_usage_info else 0
                     MembershipService(final_session).record_usage(user_id, internal_chat_id, 1, total_tokens)

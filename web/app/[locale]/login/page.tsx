@@ -41,18 +41,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const [emailError, setEmailError] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [policyError, setPolicyError] = useState("");
 
   const validateForm = () => {
     let valid = true;
     setEmailError("");
     setUsernameError("");
     setPasswordError("");
+    setPolicyError("");
 
     if (!isValidEmail(email)) {
       setEmailError(t("common.validation.emailFormat"));
@@ -70,6 +73,11 @@ export default function LoginPage() {
 
     if (mode !== "reset-request" && !isValidPassword(password)) {
       setPasswordError(t("common.validation.passwordLength"));
+      valid = false;
+    }
+
+    if (mode === "register" && !acceptedPolicies) {
+      setPolicyError(t("auth.compliance.policyRequired"));
       valid = false;
     }
 
@@ -139,7 +147,12 @@ export default function LoginPage() {
         email,
         password,
         options: {
-          data: { username },
+          data: {
+            username,
+            accepted_terms: true,
+            accepted_privacy: true,
+            accepted_policies_at: new Date().toISOString(),
+          },
           emailRedirectTo,
         },
       });
@@ -315,6 +328,25 @@ export default function LoginPage() {
                     </Button>
                   </div>
                   {passwordError && <p className="text-sm text-[#d32f2f]">{passwordError}</p>}
+                </div>
+              )}
+
+              {mode === "register" && (
+                <div className="grid gap-2">
+                  <label className="flex items-start gap-3 rounded-md border border-[#eadfd8] bg-[#fdfbfa] px-3 py-3 text-sm leading-6 text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={acceptedPolicies}
+                      onChange={(e) => {
+                        setAcceptedPolicies(e.target.checked);
+                        if (policyError) setPolicyError("");
+                      }}
+                      className="mt-1 h-4 w-4 rounded border-[#d7c7bd] text-[#d32f2f] accent-[#d32f2f]"
+                    />
+                    <span>{t("auth.compliance.acceptTerms")}</span>
+                  </label>
+                  {policyError && <p className="text-sm text-[#d32f2f]">{policyError}</p>}
+                  <p className="text-xs leading-5 text-slate-500">{t("auth.compliance.aiDisclaimer")}</p>
                 </div>
               )}
 

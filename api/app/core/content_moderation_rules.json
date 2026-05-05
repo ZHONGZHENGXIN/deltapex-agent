@@ -1,0 +1,40 @@
+{
+  "financial_risk": {
+    "description": "Investment promise or risk-free claim that must be paired with a compliance notice.",
+    "keywords": [
+      "保证赚钱",
+      "稳赚",
+      "稳赚不赔",
+      "无风险",
+      "必涨",
+      "必赚",
+      "翻倍",
+      "guaranteed profit",
+      "risk-free",
+      "must go up",
+      "sure win",
+      "can't lose"
+    ]
+  },
+  "distress": {
+    "description": "Severe distress or self-harm signal that should trigger human contact guidance.",
+    "keywords": [
+      "自杀",
+      "不想活",
+      "活不下去",
+      "结束生命",
+      "跳楼",
+      "严重亏损",
+      "爆仓",
+      "亏到崩溃",
+      "想死",
+      "suicide",
+      "kill myself",
+      "end my life",
+      "can't go on",
+      "major loss",
+      "liquidated",
+      "margin call"
+    ]
+  }
+}

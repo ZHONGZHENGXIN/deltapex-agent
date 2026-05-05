@@ -208,6 +208,11 @@
       "codeForRegister": "注册验证码",
       "codeForReset": "重置验证码"
     },
+    "compliance": {
+      "acceptTerms": "我已阅读并同意学员协议和隐私政策，并理解 AI 内容仅供学习和研究参考。",
+      "policyRequired": "注册前请先同意学员协议和隐私政策。",
+      "aiDisclaimer": "AI 内容不构成投资建议，不应作为交易决策的唯一依据。"
+    },
     "options": {
       "adminWarning": "⚠️ 管理员用户将拥有系统所有权限，请谨慎设置"
     }
@@ -240,6 +245,9 @@
     },
     "messages": {
       "errorOccurred": "抱歉，发生了错误，请重试。"
+    },
+    "compliance": {
+      "disclaimer": "AI 内容不构成投资建议，仅供学习参考。请结合自身风险承受能力独立决策。"
     },
     "tokens": {
       "input": "输入",

@@ -208,6 +208,11 @@
       "codeForRegister": "Registration Verification Code",
       "codeForReset": "Reset Verification Code"
     },
+    "compliance": {
+      "acceptTerms": "I have read and agree to the Student Agreement and Privacy Policy, and understand that AI content is for learning and research only.",
+      "policyRequired": "Please agree to the Student Agreement and Privacy Policy before registering.",
+      "aiDisclaimer": "AI content does not constitute investment advice and should not be used as the sole basis for trading decisions."
+    },
     "options": {
       "adminWarning": "⚠️ Admin users will have all system permissions, please set carefully"
     }
@@ -240,6 +245,9 @@
     },
     "messages": {
       "errorOccurred": "Sorry, an error occurred. Please try again."
+    },
+    "compliance": {
+      "disclaimer": "AI content does not constitute investment advice and is for learning and research only. Make independent decisions based on your own risk tolerance."
     },
     "tokens": {
       "input": "Input",

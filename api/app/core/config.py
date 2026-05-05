@@ -166,6 +166,10 @@ class Settings:
     )
     LLM_GATEWAY_API_KEY: str | None = _get_env("LLM_GATEWAY_API_KEY", "ONE_API_API_KEY", "ONE_API_TOKEN")
     LLM_GATEWAY_MODEL_NAME: str | None = _get_env("LLM_GATEWAY_MODEL_NAME", "ONE_API_MODEL_NAME")
+    CONTENT_MODERATION_ENABLED: bool = _get_bool_env("CONTENT_MODERATION_ENABLED", default=True)
+    COMPLIANCE_SUPPORT_CONTACT: str = (
+        _get_env("COMPLIANCE_SUPPORT_CONTACT", default="Deltapex support") or "Deltapex support"
+    )
 
     STRIPE_PUBLIC_KEY: str | None = _get_env("STRIPE_PUBLIC_KEY")
     STRIPE_PRIVATE_KEY: str | None = _get_env("STRIPE_PRIVATE_KEY")
