@@ -620,7 +620,7 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 
 ### P2-3 备份与恢复演练
 
-**状态:** 未开始
+**状态:** 配置完成，待首次 Zeabur staging 恢复演练
 **目标:** 数据库和 key/gateway 配置可恢复。
 
 **涉及位置**
@@ -642,6 +642,12 @@ Dify 账号、key 或 organization 切换后，本地数据库无法完整重建
 - 有可见 cron schedule 或备份任务配置。
 - 能从备份恢复完整 staging 环境。
 - 恢复演练日志可查。
+
+**验证证据:** `$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m py_compile scripts\export_one_api_config.py` 通过；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests/test_p2_backup_recovery_artifacts.py -q`，4 passed；`docker compose -f deploy/docker-compose.yaml config --quiet` 与 `docker compose -f deploy-test/docker-compose.yaml config --quiet` 通过；`$env:PYTHONPATH='api'; api\.venv310\Scripts\python.exe -m pytest api/tests -q`，59 passed。
+
+**实现记录:** 新增 `scripts/backup_postgres.sh`、`scripts/restore_postgres.sh`、`scripts/export_one_api_config.py`；`deploy` 与 `deploy-test` 增加 `postgres-backup` sidecar，每日 dump，默认保留 30 天；新增 `ops/crontab.example`、`ops/backup-recovery.md`、`ops/recovery-rehearsal-log.md`。Redis 明确按缓存/可丢弃状态处理；one-api 配置每周脱敏导出，默认保留 90 天。
+
+**未闭环项:** 真实 Zeabur PostgreSQL 凭据和 staging 目标库不在仓库内，本次未执行真实恢复。需要操作者按 `ops/backup-recovery.md` 对 Zeabur 数据库做一次 staging restore，并在 `ops/recovery-rehearsal-log.md` 回填日期、执行人、RTO 和问题记录。
 
 **建议 Codex Prompt**
 
@@ -775,7 +781,7 @@ P0 任务额外要求：
 | P1-5 学员级删除权 | 完成 | pytest: `api/tests/test_p1_account_deletion.py` 5 passed；pytest: `api/tests` 45 passed；前端 `pnpm exec tsc --noEmit` 通过；Zeabur Alembic current 已到 `d20260504p15` | 新增 `account_deletion_audits` migration；财务凭证保留期仍需 Alex/法务确认 |
 | P2-1 后端测试覆盖 | 完成 | pytest: `api/tests` 49 passed；pytest-cov 关键模块 66.35%，`--cov-fail-under=60` 通过 | 覆盖跨用户访问、prompt 注入/role 伪造、key fallback/mock provider、限流、删除权五类测试 |
 | P2-2 Trace 与结构化日志 | 完成 | pytest: `api/tests/test_p2_trace_logging.py` + 相关测试 19 passed；pytest: `api/tests` 55 passed | 新增 `X-Trace-Id` 中间件、structlog 结构化日志、敏感字段 mask、LLM gateway token/latency/error_type 日志 |
-| P2-3 备份与恢复演练 | 未开始 |  |  |
+| P2-3 备份与恢复演练 | 配置完成，待首次 Zeabur staging 恢复演练 | pytest: `api/tests/test_p2_backup_recovery_artifacts.py` 4 passed；pytest: `api/tests` 59 passed；deploy/deploy-test compose config 通过 | 新增 Postgres dump/restore、one-api 脱敏导出、cron 示例、恢复 runbook 与演练日志模板；真实 Zeabur staging restore 待人工执行 |
 | P2-4 限流加固 | 未开始 |  |  |
 | P2-5 内容审核与合规 | 未开始 |  |  |
 | P2-6 监控仪表盘 | 未开始 |  |  |

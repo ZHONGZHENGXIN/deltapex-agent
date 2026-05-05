@@ -1,0 +1,16 @@
+# tracoach backup schedule example
+# Install on an ops host that can reach Zeabur PostgreSQL, or adapt to Zeabur scheduled jobs.
+# Keep secrets in a restricted env file, not in this crontab.
+
+SHELL=/bin/sh
+TRACOACH_ROOT=/srv/tracoach
+TRACOACH_ENV=/etc/tracoach/backup.env
+
+# Daily Postgres custom-format dump. Retention defaults to 30 days.
+0 2 * * * cd $TRACOACH_ROOT && . $TRACOACH_ENV && scripts/backup_postgres.sh >> /var/log/tracoach/postgres-backup.log 2>&1
+
+# Weekly one-api channel/config export with secret redaction. Retention defaults to 90 days.
+30 2 * * 0 cd $TRACOACH_ROOT && . $TRACOACH_ENV && python3 scripts/export_one_api_config.py >> /var/log/tracoach/one-api-config-backup.log 2>&1
+
+# Monthly staging restore rehearsal reminder. Fill ops/recovery-rehearsal-log.md after running it.
+0 4 1 * * echo "Run tracoach staging restore rehearsal and update ops/recovery-rehearsal-log.md" >> /var/log/tracoach/recovery-rehearsal.log

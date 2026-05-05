@@ -170,6 +170,46 @@ services:
     networks:
       - bait-network-test
 
+  postgres-backup:
+    container_name: bait-postgres-backup-test
+    image: postgres:17.4-bookworm
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123456}
+      POSTGRES_DB: ${POSTGRES_DB:-bait}
+      POSTGRES_BACKUP_RETENTION_DAYS: ${POSTGRES_BACKUP_RETENTION_DAYS:-30}
+      POSTGRES_BACKUP_INTERVAL_SECONDS: ${POSTGRES_BACKUP_INTERVAL_SECONDS:-86400}
+    volumes:
+      - $PWD/volumes/backups/postgres:/backups/postgres
+    command: >
+      sh -c '
+        set -eu;
+        echo "postgres backup loop started";
+        while true; do
+          ts=$$(date -u +%Y%m%dT%H%M%SZ);
+          file="/backups/postgres/$${POSTGRES_DB}_$${ts}.dump";
+          PGPASSWORD="$${POSTGRES_PASSWORD}" pg_dump
+            --host "$${POSTGRES_HOST}"
+            --port "$${POSTGRES_PORT}"
+            --username "$${POSTGRES_USER}"
+            --dbname "$${POSTGRES_DB}"
+            --format=custom
+            --no-owner
+            --file "$$file";
+          sha256sum "$$file" > "$$file.sha256";
+          find /backups/postgres -type f \( -name "*.dump" -o -name "*.dump.sha256" \)
+            -mtime +"$${POSTGRES_BACKUP_RETENTION_DAYS}" -delete;
+          sleep "$${POSTGRES_BACKUP_INTERVAL_SECONDS}";
+        done'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bait-network-test
+
   # The redis cache.
   redis:
     container_name: bait-redis-test

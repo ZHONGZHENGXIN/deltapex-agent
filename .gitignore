@@ -170,6 +170,7 @@ mise.toml
 
 deploy/volumes/
 deploy-test/volumes/
+backups/
 
 # Node.js dependencies (root level)
 node_modules/
