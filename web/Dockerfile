@@ -1,10 +1,11 @@
 FROM node:20.19.2-alpine3.21 AS base
+RUN npm install -g pnpm@10.15.1
 
 # Stage 1: Install dependencies
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Stage 2: Build the application
 FROM base AS builder
@@ -28,7 +29,7 @@ ENV NEXT_PUBLIC_SUPABASE_RESET_REDIRECT_URL=$NEXT_PUBLIC_SUPABASE_RESET_REDIRECT
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN corepack enable pnpm && pnpm build
+RUN pnpm build
 
 # Stage 3: Production server
 FROM base AS runner

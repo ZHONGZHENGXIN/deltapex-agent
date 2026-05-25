@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "description": "Bait Web",
+  "packageManager": "pnpm@10.15.1",
   "engines": {
     "node": ">=20.x",
-    "pnpm": ">=9.x"
+    "pnpm": "10.15.1"
   },
   "scripts": {
     "dev": "next dev --turbopack -p 3000",
