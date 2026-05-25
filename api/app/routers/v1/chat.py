@@ -207,6 +207,15 @@ async def _single_chunk_stream(content: str):
     yield content
 
 
+async def _content_and_usage_stream(content: str, usage_info: Optional[Dict[str, int]] = None):
+    yield content
+    if usage_info:
+        yield (
+            f"\n__TOKEN_USAGE__{usage_info['prompt_tokens']},"
+            f"{usage_info['completion_tokens']},{usage_info['total_tokens']}__END__"
+        )
+
+
 @chat_router.post("", response_model=ChatOut)
 async def create_chat_api(chat_in: ChatCreate, session: SessionDep, user: UserDep, lang: LangDep) -> ChatOut:
     if chat_in.agent_id:
@@ -326,7 +335,7 @@ async def create_chat_message_api(
         messages=messages,
     )
 
-    if not stream:
+    async def create_non_stream_assistant_response() -> tuple[MessageOut, str, Optional[Dict[str, int]]]:
         MessageLogger.log_ai_response_start(chat.agent_id, False)
         try:
             llm_response_content, usage_info = await create_agent_response(
@@ -362,20 +371,29 @@ async def create_chat_message_api(
             )
             MessageLogger.log_ai_response_success(assistant_message.id, len(llm_response_content), total_tokens)
             MessageLogger.log_usage_recorded(user_id, public_chat_id, total_tokens)
-            return [user_message_out, message_to_out(assistant_message, public_chat_id)]
+            return message_to_out(assistant_message, public_chat_id), llm_response_content, usage_info
         except Exception as exc:
             MessageLogger.log_ai_response_error(exc, public_chat_id)
+            error_content = f"AI response failed: {exc}"
             assistant_message = create_message(
                 MessageCreate(
                     chat_id=internal_chat_id,
                     user_id=user_id,
-                    content=f"AI response failed: {exc}",
+                    content=error_content,
                     role=MessageRole.ASSISTANT,
                 ),
                 session,
             )
             membership_service.record_usage(user_id, internal_chat_id, 1, 0)
-            return [user_message_out, message_to_out(assistant_message, public_chat_id)]
+            return message_to_out(assistant_message, public_chat_id), error_content, None
+
+    if not stream:
+        assistant_out, _, _ = await create_non_stream_assistant_response()
+        return [user_message_out, assistant_out]
+
+    if not agent.is_stream:
+        _, llm_response_content, usage_info = await create_non_stream_assistant_response()
+        return StreamingResponse(_content_and_usage_stream(llm_response_content, usage_info), media_type="text/plain")
 
     stream_trace_id = get_trace_id()
 

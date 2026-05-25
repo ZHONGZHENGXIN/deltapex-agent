@@ -117,6 +117,35 @@ def _extract_content(data: dict[str, Any]) -> str:
     return data.get("text") or data.get("content") or ""
 
 
+def _extract_stream_content(data: dict[str, Any], previous_snapshot: str = "") -> tuple[str, str]:
+    choices = data.get("choices") or []
+    if choices:
+        delta = choices[0].get("delta") or {}
+        content = delta.get("content") or ""
+        if content:
+            return content, previous_snapshot
+
+    candidates: list[Any] = []
+    delta = data.get("delta")
+    if isinstance(delta, dict):
+        candidates.extend([delta.get("content"), delta.get("answer"), delta.get("text")])
+    elif isinstance(delta, str):
+        candidates.append(delta)
+
+    candidates.extend([data.get("answer"), data.get("content"), data.get("text")])
+
+    for value in candidates:
+        if not isinstance(value, str) or not value:
+            continue
+        if value == previous_snapshot:
+            return "", previous_snapshot
+        if previous_snapshot and value.startswith(previous_snapshot):
+            return value[len(previous_snapshot) :], value
+        return value, value
+
+    return "", previous_snapshot
+
+
 async def create_fastgpt_response(
     messages: list[MessageOut],
     agent: Agent,
@@ -144,6 +173,7 @@ async def create_fastgpt_response_stream(
             response.raise_for_status()
             current_event = ""
             final_usage_info: Optional[Dict[str, int]] = None
+            last_content_snapshot = ""
             async for line in response.aiter_lines():
                 if not line:
                     continue
@@ -193,12 +223,9 @@ async def create_fastgpt_response_stream(
                 if usage_info["total_tokens"] > 0:
                     final_usage_info = usage_info
 
-                choices = data.get("choices") or []
-                if choices:
-                    delta = choices[0].get("delta") or {}
-                    content = delta.get("content") or ""
-                    if content:
-                        yield content, None
+                content, last_content_snapshot = _extract_stream_content(data, last_content_snapshot)
+                if content:
+                    yield content, None
 
             if final_usage_info and final_usage_info["total_tokens"] > 0:
                 yield "", final_usage_info
