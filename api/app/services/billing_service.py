@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Optional
 from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
@@ -281,13 +282,20 @@ class BillingService:
             return
 
         wallet = self.get_wallet(user_id)
-        if wallet.paid_token_balance < paid_tokens:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Paid token balance is out of sync for message {message_id}",
+        tokens_to_consume = min(wallet.paid_token_balance, paid_tokens)
+        if tokens_to_consume < paid_tokens:
+            logger.warning(
+                "Paid token balance is out of sync for message %s: requested=%s available=%s",
+                message_id,
+                paid_tokens,
+                wallet.paid_token_balance,
             )
 
-        wallet.paid_token_balance -= paid_tokens
-        wallet.total_consumed_paid_tokens += paid_tokens
+        if tokens_to_consume <= 0:
+            return
+
+        wallet.paid_token_balance -= tokens_to_consume
+        wallet.total_consumed_paid_tokens += tokens_to_consume
+        wallet.updated_at = datetime.utcnow()
         self.db.add(wallet)
         self.db.commit()

@@ -21,6 +21,7 @@ from app.models.membership import MembershipPlan, UserMembership
 from app.models.message import Message
 from app.models.user import User, UserType
 from app.schemas.membership import MembershipType
+from app.services.billing_service import BillingService
 from app.services.rate_limit_service import ChatRateLimiter, RateLimitExceeded
 
 
@@ -306,3 +307,30 @@ def test_atomic_membership_usage_increment_handles_100_concurrent_requests(tmp_p
     assert membership.total_message_count == 100
     assert membership.daily_token_count == 200
     assert membership.total_token_count == 200
+
+
+def test_paid_token_consumption_clamps_when_balance_is_out_of_sync(tmp_path):
+    engine = create_engine(f"sqlite:///{tmp_path / 'billing.db'}")
+    UserTokenWallet.__table__.create(engine)
+
+    now = datetime.utcnow()
+    with Session(engine) as session:
+        session.add(
+            UserTokenWallet(
+                id=1,
+                user_id=1,
+                paid_token_balance=5,
+                total_recharged_tokens=5,
+                total_consumed_paid_tokens=0,
+                created_at=now,
+                updated_at=now,
+            )
+        )
+        session.commit()
+
+        BillingService(session).consume_paid_tokens(user_id=1, message_id=99, paid_tokens=10)
+
+        wallet = session.get(UserTokenWallet, 1)
+
+    assert wallet.paid_token_balance == 0
+    assert wallet.total_consumed_paid_tokens == 5

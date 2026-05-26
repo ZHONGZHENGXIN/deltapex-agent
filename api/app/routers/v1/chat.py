@@ -391,7 +391,7 @@ async def create_chat_message_api(
         assistant_out, _, _ = await create_non_stream_assistant_response()
         return [user_message_out, assistant_out]
 
-    if not agent.is_stream:
+    if not agent.is_stream or agent.source == AgentSource.FASTGPT:
         _, llm_response_content, usage_info = await create_non_stream_assistant_response()
         return StreamingResponse(_content_and_usage_stream(llm_response_content, usage_info), media_type="text/plain")
 
