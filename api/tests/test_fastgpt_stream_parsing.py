@@ -1,4 +1,10 @@
-from app.agents.fastgpt import _extract_stream_content
+from app.agents.fastgpt import _extract_content, _extract_stream_content
+
+
+def test_extract_content_supports_fastgpt_non_openai_fields():
+    assert _extract_content({"answer": "top answer"}) == "top answer"
+    assert _extract_content({"responseData": {"content": "nested content"}}) == "nested content"
+    assert _extract_content({"choices": [{"message": {"answer": "choice answer"}}]}) == "choice answer"
 
 
 def test_extract_stream_content_supports_openai_delta():

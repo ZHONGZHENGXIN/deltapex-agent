@@ -305,6 +305,7 @@ export default function ChatContentPage({
       
       let assistantContent = ''
       let tokenUsage: TokenUsage | null = null
+      let usedServerFallback = false
       
       await fetcher('/chat/message?stream=true',
         {
@@ -317,23 +318,65 @@ export default function ChatContentPage({
         },
         (chunk: string) => {
           // 检查是否是 token 统计信息
-          if (chunk.includes('__TOKEN_USAGE__') && chunk.includes('__END__')) {
-            const tokenMatch = chunk.match(/__TOKEN_USAGE__(\d+),(\d+),(\d+)__END__/)
-            if (tokenMatch) {
-              tokenUsage = {
-                prompt_tokens: parseInt(tokenMatch[1]),
-                completion_tokens: parseInt(tokenMatch[2]),
-                total_tokens: parseInt(tokenMatch[3])
-              }
-              // 不将 token 统计信息添加到内容中
-              return
+          const tokenMatch = chunk.match(/__TOKEN_USAGE__(\d+),(\d+),(\d+)__END__/)
+          let contentChunk = chunk
+          if (tokenMatch) {
+            tokenUsage = {
+              prompt_tokens: parseInt(tokenMatch[1]),
+              completion_tokens: parseInt(tokenMatch[2]),
+              total_tokens: parseInt(tokenMatch[3])
             }
+            contentChunk = chunk.replace(/\n?__TOKEN_USAGE__\d+,\d+,\d+__END__/g, '')
           }
-          
-          assistantContent += chunk
+
+          if (!contentChunk) {
+            return
+          }
+
+          assistantContent += contentChunk
           displayStreamingText(assistantContent, assistantMsgIndex)
         }
       )
+
+      if (!assistantContent.trim()) {
+        try {
+          const refreshedChat = await fetcher<Chat>(`/chat/${chat.id}`, {
+            method: 'GET',
+            auth: true,
+          })
+          const refreshedMessages = refreshedChat?.messages || []
+          const latestAssistant = [...refreshedMessages]
+            .reverse()
+            .find(msg => msg.role === 'assistant' && msg.content?.trim())
+
+          if (latestAssistant) {
+            assistantContent = latestAssistant.content
+            tokenUsage = (latestAssistant.token_usage as TokenUsage | undefined) || tokenUsage
+            usedServerFallback = true
+            setMessages(refreshedMessages)
+            updateChatInCache(chat.id, {
+              ...refreshedChat,
+              messages: refreshedMessages,
+            })
+          } else {
+            const emptyResponseMessage = t('chat.messages.errorOccurred')
+            assistantContent = emptyResponseMessage
+            setError(emptyResponseMessage)
+            setMessages(prev => {
+              const newMsgs = [...prev]
+              if (newMsgs[assistantMsgIndex]) {
+                newMsgs[assistantMsgIndex] = {
+                  ...newMsgs[assistantMsgIndex],
+                  content: emptyResponseMessage,
+                }
+              }
+              return newMsgs
+            })
+          }
+        } catch (fallbackError) {
+          console.warn('Failed to refresh chat after empty stream:', fallbackError)
+        }
+      }
       
       // 流式响应完成
       setCurrentStreamingIndex(-1)
@@ -363,8 +406,10 @@ export default function ChatContentPage({
         token_usage: tokenUsage || undefined // 包含 token 统计信息
       }
       
-      addMessageToChat(chat.id, finalUserMsg)
-      addMessageToChat(chat.id, finalAssistantMsg)
+      if (!usedServerFallback) {
+        addMessageToChat(chat.id, finalUserMsg)
+        addMessageToChat(chat.id, finalAssistantMsg)
+      }
       
       // 更新聊天的最后更新时间
       updateChatInCache(chat.id, { 

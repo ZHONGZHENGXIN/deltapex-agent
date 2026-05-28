@@ -113,8 +113,18 @@ def _extract_token_count(item: Any) -> int:
 
 def _extract_content(data: dict[str, Any]) -> str:
     if data.get("choices"):
-        return data["choices"][0].get("message", {}).get("content", "") or ""
-    return data.get("text") or data.get("content") or ""
+        message = data["choices"][0].get("message", {}) or {}
+        content = message.get("content") or message.get("answer") or message.get("text")
+        if content:
+            return content
+
+    response_data = data.get("responseData")
+    if isinstance(response_data, dict):
+        content = response_data.get("answer") or response_data.get("content") or response_data.get("text")
+        if content:
+            return content
+
+    return data.get("answer") or data.get("text") or data.get("content") or ""
 
 
 def _extract_stream_content(data: dict[str, Any], previous_snapshot: str = "") -> tuple[str, str]:
